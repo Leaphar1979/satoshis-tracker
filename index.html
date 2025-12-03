@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Satoshis Tracker – Trades par/BTC</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/png" href="icon-512.png" />
+  <link rel="icon" type="image/png" href="icon-512.png" />
   <link rel="apple-touch-icon" href="icon-512.png" />
   <style>
     * { box-sizing: border-box; }
@@ -133,6 +133,25 @@
       text-align: center;
     }
 
+    /* linha para banca inicial */
+    .bank-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .bank-row label {
+      margin-bottom: 0;
+    }
+    .bank-row input {
+      max-width: 180px;
+    }
+    .bank-row .btn-primary {
+      width: auto;
+      padding-inline: 12px;
+    }
+
     /* wrapper da tabela para scroll horizontal se precisar */
     .table-wrapper {
       width: 100%;
@@ -199,11 +218,21 @@
 
   <div class="card">
     <h2>Resumo</h2>
+
+    <div class="bank-row">
+      <label for="bancaInicial">Banca inicial (BTC):</label>
+      <input type="number" id="bancaInicial" step="0.00000001" placeholder="ex: 0.0025" />
+      <button type="button" class="btn-primary" id="btnSalvarBanca">Salvar</button>
+    </div>
+
     <div class="summary">
       <div class="summary-item" id="sumTotalTrades">Trades: 0</div>
       <div class="summary-item" id="sumWins">Win rate: 0%</div>
       <div class="summary-item" id="sumBtcResult">Resultado BTC: 0</div>
       <div class="summary-item" id="sumAvgRoi">ROI médio: 0%</div>
+      <div class="summary-item" id="sumBankInitial">Banca inicial: —</div>
+      <div class="summary-item" id="sumBankCurrent">Banca atual: —</div>
+      <div class="summary-item" id="sumBankGrowth">Crescimento: —</div>
     </div>
   </div>
 
@@ -238,6 +267,7 @@
 
   <script>
     const STORAGE_KEY = "btcPairTrades";
+    const BANK_KEY = "btcBankInitial";
 
     function loadTrades() {
       try {
@@ -253,12 +283,55 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
     }
 
+    function loadBankInitial() {
+      try {
+        const raw = localStorage.getItem(BANK_KEY);
+        const val = raw ? parseFloat(raw) : 0;
+        return isNaN(val) ? 0 : val;
+      } catch (e) {
+        console.error("Erro ao carregar banca:", e);
+        return 0;
+      }
+    }
+
+    function saveBankInitial(value) {
+      localStorage.setItem(BANK_KEY, String(value));
+    }
+
     function formatNumber(value, decimals = 8) {
       return Number(value).toFixed(decimals);
     }
 
     function formatPercent(value) {
       return (Number(value).toFixed(2)) + "%";
+    }
+
+    function updateBankSummary(totalBtcResult) {
+      const banca = loadBankInitial();
+      const input = document.getElementById("bancaInicial");
+      const elInit = document.getElementById("sumBankInitial");
+      const elCurr = document.getElementById("sumBankCurrent");
+      const elGrowth = document.getElementById("sumBankGrowth");
+
+      if (input && banca) {
+        input.value = banca.toFixed(8);
+      }
+
+      if (!elInit || !elCurr || !elGrowth) return;
+
+      if (!banca) {
+        elInit.textContent = "Banca inicial: —";
+        elCurr.textContent = "Banca atual: —";
+        elGrowth.textContent = "Crescimento: —";
+        return;
+      }
+
+      const bancaAtual = banca + totalBtcResult;
+      const growth = banca ? (totalBtcResult / banca) * 100 : 0;
+
+      elInit.textContent = "Banca inicial: " + banca.toFixed(8);
+      elCurr.textContent = "Banca atual: " + bancaAtual.toFixed(8);
+      elGrowth.textContent = "Crescimento: " + growth.toFixed(2) + "%";
     }
 
     function renderTrades() {
@@ -323,6 +396,8 @@
             renderTrades();
           });
         });
+
+      updateBankSummary(totalBtcResult);
     }
 
     document.getElementById("tradeForm").addEventListener("submit", (e) => {
@@ -364,6 +439,20 @@
       e.target.reset();
       document.getElementById("data").value = data;
     });
+
+    const btnSalvarBanca = document.getElementById("btnSalvarBanca");
+    if (btnSalvarBanca) {
+      btnSalvarBanca.addEventListener("click", () => {
+        const input = document.getElementById("bancaInicial");
+        const val = parseFloat(input.value);
+        if (isNaN(val) || val <= 0) {
+          alert("Informe um valor de banca inicial em BTC maior que zero.");
+          return;
+        }
+        saveBankInitial(val);
+        renderTrades();
+      });
+    }
 
     document.getElementById("data").value = new Date().toISOString().slice(0,10);
     renderTrades();
