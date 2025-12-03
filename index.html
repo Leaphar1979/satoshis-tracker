@@ -71,6 +71,7 @@
       background: #22c55e;
       color: #022c22;
       font-weight: 600;
+      width: 100%;
     }
     .btn-primary:hover {
       background: #16a34a;
@@ -129,6 +130,30 @@
       color: #6b7280;
       text-align: center;
     }
+
+    /* wrapper da tabela para scroll horizontal se precisar */
+    .table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    /* Ajustes para telas pequenas (celular) */
+    @media (max-width: 640px) {
+      body {
+        padding: 8px;
+      }
+      .card {
+        padding: 12px;
+      }
+      table {
+        font-size: 0.7rem;
+      }
+      /* Esconde BTC In (coluna 6) e BTC Out (coluna 7) no mobile */
+      th:nth-child(6), td:nth-child(6),
+      th:nth-child(7), td:nth-child(7) {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -182,25 +207,27 @@
 
   <div class="card">
     <h2>Histórico de trades</h2>
-    <table id="tradesTable">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Par</th>
-          <th>Qtd</th>
-          <th>Entrada (BTC)</th>
-          <th>Saída (BTC)</th>
-          <th>BTC In</th>
-          <th>BTC Out</th>
-          <th>BTC Resultado</th>
-          <th>ROI %</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- linhas serão inseridas via JS -->
-      </tbody>
-    </table>
+    <div class="table-wrapper">
+      <table id="tradesTable">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Par</th>
+            <th>Qtd</th>
+            <th>Entrada (BTC)</th>
+            <th>Saída (BTC)</th>
+            <th>BTC In</th>
+            <th>BTC Out</th>
+            <th>BTC Resultado</th>
+            <th>ROI %</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- linhas serão inseridas via JS -->
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="footer">
@@ -268,7 +295,6 @@
         tbody.appendChild(tr);
       });
 
-      // resumo
       const totalTrades = trades.length;
       const winRate = totalTrades ? (wins / totalTrades) * 100 : 0;
       const avgRoi = totalTrades
@@ -284,16 +310,17 @@
       document.getElementById("sumAvgRoi").textContent =
         `ROI médio: ${avgRoi.toFixed(2)}%`;
 
-      // botão excluir
-      tbody.querySelectorAll("button.btn-danger").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const idx = Number(btn.dataset.index);
-          const updated = loadTrades();
-          updated.splice(idx, 1);
-          saveTrades(updated);
-          renderTrades();
+      document
+        .querySelectorAll("button.btn-danger")
+        .forEach(btn => {
+          btn.addEventListener("click", () => {
+            const idx = Number(btn.dataset.index);
+            const updated = loadTrades();
+            updated.splice(idx, 1);
+            saveTrades(updated);
+            renderTrades();
+          });
         });
-      });
     }
 
     document.getElementById("tradeForm").addEventListener("submit", (e) => {
@@ -336,9 +363,7 @@
       document.getElementById("data").value = data;
     });
 
-    // set default date
     document.getElementById("data").value = new Date().toISOString().slice(0,10);
-
     renderTrades();
   </script>
 </body>
