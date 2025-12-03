@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <title>Satoshis Tracker – Trades par/BTC</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Satoshis Tracker" />
   <link rel="icon" type="image/png" href="icon-512.png" />
   <link rel="apple-touch-icon" href="icon-512.png" />
   <style>
@@ -42,6 +45,9 @@
       gap: 12px;
       align-items: flex-end;
     }
+    form > div {
+      margin-bottom: 4px;
+    }
     label {
       font-size: 0.8rem;
       color: #9ca3af;
@@ -78,6 +84,15 @@
     .btn-primary:hover {
       background: #16a34a;
     }
+    .btn-secondary {
+      background: #1f2937;
+      color: #e5e7eb;
+      border: 1px solid #374151;
+      padding-inline: 12px;
+    }
+    .btn-secondary:hover {
+      background: #111827;
+    }
     .btn-danger {
       background: #ef4444;
       color: white;
@@ -93,6 +108,12 @@
       border-radius: 999px;
       background: #020617;
       border: 1px solid #1f2937;
+    }
+    .summary-actions {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
     table {
       width: 100%;
@@ -131,6 +152,7 @@
       font-size: 0.75rem;
       color: #6b7280;
       text-align: center;
+      padding-bottom: 8px;
     }
 
     /* linha para banca inicial */
@@ -156,6 +178,14 @@
     .table-wrapper {
       width: 100%;
       overflow-x: auto;
+    }
+
+    /* canvas do gráfico */
+    #bankChart {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 8px;
+      background: #020617;
     }
 
     /* Ajustes para telas pequenas (celular) */
@@ -228,16 +258,46 @@
     <div class="summary">
       <div class="summary-item" id="sumTotalTrades">Trades: 0</div>
       <div class="summary-item" id="sumWins">Win rate: 0%</div>
-      <div class="summary-item" id="sumBtcResult">Resultado BTC: 0</div>
-      <div class="summary-item" id="sumAvgRoi">ROI médio: 0%</div>
-      <div class="summary-item" id="sumBankInitial">Banca inicial: —</div>
-      <div class="summary-item" id="sumBankCurrent">Banca atual: —</div>
-      <div class="summary-item" id="sumBankGrowth">Crescimento: —</div>
+      <div class="summary-item" id="sumBtcResult">Result BTC: 0</div>
+      <div class="summary-item" id="sumAvgRoi">Avg ROI: 0%</div>
+      <div class="summary-item" id="sumBankInitial">Initial bank: —</div>
+      <div class="summary-item" id="sumBankCurrent">Current bank: —</div>
+      <div class="summary-item" id="sumBankGrowth">Growth: —</div>
+    </div>
+
+    <div class="summary-actions">
+      <button type="button" class="btn-secondary" id="btnToggleChart">Bank chart</button>
+      <button type="button" class="btn-secondary" id="btnTogglePairs">Pairs summary</button>
+    </div>
+  </div>
+
+  <div class="card" id="cardChart" style="display:none;">
+    <h2>Bank evolution (BTC)</h2>
+    <canvas id="bankChart" height="200"></canvas>
+  </div>
+
+  <div class="card" id="cardPairs" style="display:none;">
+    <h2>Pairs summary</h2>
+    <div class="table-wrapper">
+      <table id="pairsTable">
+        <thead>
+          <tr>
+            <th>Pair</th>
+            <th>Trades</th>
+            <th>Wins</th>
+            <th>Total BTC result</th>
+            <th>Avg ROI %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- linhas via JS -->
+        </tbody>
+      </table>
     </div>
   </div>
 
   <div class="card">
-    <h2>Histórico de trades</h2>
+    <h2>Trade history</h2>
     <div class="table-wrapper">
       <table id="tradesTable">
         <thead>
@@ -249,7 +309,7 @@
             <th>Saída (BTC)</th>
             <th>BTC In</th>
             <th>BTC Out</th>
-            <th>BTC Resultado</th>
+            <th>BTC Result</th>
             <th>ROI %</th>
             <th>Ações</th>
           </tr>
@@ -262,12 +322,13 @@
   </div>
 
   <div class="footer">
-    Dados salvos localmente (localStorage). Você está farmando satoshis. 🚀
+    Data stored locally (localStorage). You are farming sats. 🚀
   </div>
 
   <script>
     const STORAGE_KEY = "btcPairTrades";
     const BANK_KEY = "btcBankInitial";
+    const HISTORY_KEY = "btcBankHistory";
 
     function loadTrades() {
       try {
@@ -298,6 +359,34 @@
       localStorage.setItem(BANK_KEY, String(value));
     }
 
+    function loadBankHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        console.error("Erro ao carregar histórico:", e);
+        return [];
+      }
+    }
+
+    function saveBankHistory(history) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function updateBankHistory(bancaAtual) {
+      if (!bancaAtual && bancaAtual !== 0) return;
+      const history = loadBankHistory();
+      const last = history[history.length - 1];
+      // evita repetir o mesmo valor muitas vezes
+      if (!last || Math.abs(last.value - bancaAtual) > 1e-12) {
+        history.push({
+          time: new Date().toISOString(),
+          value: bancaAtual
+        });
+        saveBankHistory(history);
+      }
+    }
+
     function formatNumber(value, decimals = 8) {
       return Number(value).toFixed(decimals);
     }
@@ -317,21 +406,129 @@
         input.value = banca.toFixed(8);
       }
 
-      if (!elInit || !elCurr || !elGrowth) return;
+      if (!elInit || !elCurr || !elGrowth) {
+        return { banca: 0, bancaAtual: 0 };
+      }
 
       if (!banca) {
-        elInit.textContent = "Banca inicial: —";
-        elCurr.textContent = "Banca atual: —";
-        elGrowth.textContent = "Crescimento: —";
-        return;
+        elInit.textContent = "Initial bank: —";
+        elCurr.textContent = "Current bank: —";
+        elGrowth.textContent = "Growth: —";
+        return { banca: 0, bancaAtual: 0 };
       }
 
       const bancaAtual = banca + totalBtcResult;
       const growth = banca ? (totalBtcResult / banca) * 100 : 0;
 
-      elInit.textContent = "Banca inicial: " + banca.toFixed(8);
-      elCurr.textContent = "Banca atual: " + bancaAtual.toFixed(8);
-      elGrowth.textContent = "Crescimento: " + growth.toFixed(2) + "%";
+      elInit.textContent = "Initial bank: " + banca.toFixed(8);
+      elCurr.textContent = "Current bank: " + bancaAtual.toFixed(8);
+      elGrowth.textContent = "Growth: " + growth.toFixed(2) + "%";
+
+      return { banca, bancaAtual };
+    }
+
+    function renderBankChart() {
+      const canvas = document.getElementById("bankChart");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      const history = loadBankHistory();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!history.length) {
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "12px system-ui";
+        ctx.fillText("No data yet. Add trades and set your initial bank.", 10, 20);
+        return;
+      }
+
+      const width = canvas.width;
+      const height = canvas.height;
+      const padding = 20;
+      const values = history.map(h => h.value);
+      const minVal = Math.min(...values);
+      const maxVal = Math.max(...values);
+      const range = maxVal - minVal || 1;
+
+      // fundo
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(0, 0, width, height);
+
+      // linha eixo base
+      ctx.strokeStyle = "#1f2937";
+      ctx.beginPath();
+      ctx.moveTo(padding, height - padding);
+      ctx.lineTo(width - padding, height - padding);
+      ctx.stroke();
+
+      // linha de evolução
+      ctx.strokeStyle = "#22c55e";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+
+      history.forEach((point, index) => {
+        const x = padding + (index / Math.max(history.length - 1, 1)) * (width - 2 * padding);
+        const y = height - padding - ((point.value - minVal) / range) * (height - 2 * padding);
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+
+      ctx.stroke();
+
+      // valor final
+      const last = history[history.length - 1];
+      const lastX = padding + ((history.length - 1) / Math.max(history.length - 1, 1)) * (width - 2 * padding);
+      const lastY = height - padding - ((last.value - minVal) / range) * (height - 2 * padding);
+
+      ctx.fillStyle = "#22c55e";
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = "11px system-ui";
+      ctx.fillText(last.value.toFixed(8) + " BTC", lastX + 5, lastY - 5);
+    }
+
+    function renderPairSummary(trades) {
+      const tbody = document.querySelector("#pairsTable tbody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      const perPair = {};
+
+      trades.forEach(t => {
+        const key = t.par || "N/A";
+        if (!perPair[key]) {
+          perPair[key] = { trades: 0, wins: 0, totalBtc: 0, totalRoi: 0 };
+        }
+        const p = perPair[key];
+        p.trades += 1;
+        if (t.btcResultado > 0) p.wins += 1;
+        p.totalBtc += t.btcResultado;
+        p.totalRoi += t.roiPercent;
+      });
+
+      Object.entries(perPair).forEach(([pair, data]) => {
+        const avgRoi = data.trades ? data.totalRoi / data.trades : 0;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${pair}</td>
+          <td>${data.trades}</td>
+          <td>${data.wins}</td>
+          <td class="${data.totalBtc >= 0 ? "tag-win" : "tag-loss"}">
+            ${formatNumber(data.totalBtc)}
+          </td>
+          <td class="${avgRoi >= 0 ? "tag-win" : "tag-loss"}">
+            ${formatPercent(avgRoi)}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if (!Object.keys(perPair).length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="5" style="text-align:center;color:#6b7280;">No trades yet.</td>`;
+        tbody.appendChild(tr);
+      }
     }
 
     function renderTrades() {
@@ -381,9 +578,9 @@
       document.getElementById("sumWins").textContent =
         `Win rate: ${winRate.toFixed(1)}%`;
       document.getElementById("sumBtcResult").textContent =
-        `Resultado BTC: ${formatNumber(totalBtcResult)}`;
+        `Result BTC: ${formatNumber(totalBtcResult)}`;
       document.getElementById("sumAvgRoi").textContent =
-        `ROI médio: ${avgRoi.toFixed(2)}%`;
+        `Avg ROI: ${avgRoi.toFixed(2)}%`;
 
       document
         .querySelectorAll("button.btn-danger")
@@ -397,7 +594,12 @@
           });
         });
 
-      updateBankSummary(totalBtcResult);
+      const bankInfo = updateBankSummary(totalBtcResult);
+      if (bankInfo.banca) {
+        updateBankHistory(bankInfo.bancaAtual);
+      }
+      renderBankChart();
+      renderPairSummary(trades);
     }
 
     document.getElementById("tradeForm").addEventListener("submit", (e) => {
@@ -451,6 +653,28 @@
         }
         saveBankInitial(val);
         renderTrades();
+      });
+    }
+
+    const btnToggleChart = document.getElementById("btnToggleChart");
+    const btnTogglePairs = document.getElementById("btnTogglePairs");
+    const cardChart = document.getElementById("cardChart");
+    const cardPairs = document.getElementById("cardPairs");
+
+    if (btnToggleChart && cardChart) {
+      btnToggleChart.addEventListener("click", () => {
+        const visible = cardChart.style.display === "block";
+        cardChart.style.display = visible ? "none" : "block";
+        if (!visible) {
+          renderBankChart();
+        }
+      });
+    }
+
+    if (btnTogglePairs && cardPairs) {
+      btnTogglePairs.addEventListener("click", () => {
+        const visible = cardPairs.style.display === "block";
+        cardPairs.style.display = visible ? "none" : "block";
       });
     }
 
