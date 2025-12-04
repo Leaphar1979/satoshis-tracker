@@ -1,14 +1,19 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Satoshis Tracker – Trades par/BTC</title>
+  <title>Satoshis Tracker – BTC Pair Trades</title>
+
+  <!-- iPhone PWA settings -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="Satoshis Tracker" />
+
+  <!-- App Icon -->
   <link rel="icon" type="image/png" href="icon-512.png" />
   <link rel="apple-touch-icon" href="icon-512.png" />
+
   <style>
     * { box-sizing: border-box; }
     body {
@@ -18,15 +23,20 @@
       background: #050816;
       color: #e5e7eb;
     }
+
     h1 {
-      font-size: 1.5rem;
+      margin-top: 0;
       margin-bottom: 8px;
+      text-align: center;
     }
+
     .subtitle {
       font-size: 0.85rem;
       color: #9ca3af;
       margin-bottom: 16px;
+      text-align: center;
     }
+
     .card {
       background: #111827;
       border-radius: 12px;
@@ -34,27 +44,27 @@
       margin-bottom: 16px;
       box-shadow: 0 8px 20px rgba(0,0,0,0.5);
     }
+
     .card h2 {
       font-size: 1.1rem;
       margin-top: 0;
       margin-bottom: 12px;
     }
+
     form {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
-      align-items: flex-end;
     }
-    form > div {
-      margin-bottom: 4px;
-    }
+
     label {
       font-size: 0.8rem;
       color: #9ca3af;
       display: block;
       margin-bottom: 4px;
     }
-    input, select {
+
+    input {
       width: 100%;
       padding: 6px 8px;
       border-radius: 8px;
@@ -63,11 +73,13 @@
       color: #e5e7eb;
       font-size: 0.9rem;
     }
+
     input:focus {
       outline: none;
       border-color: #22c55e;
       box-shadow: 0 0 0 1px #22c55e33;
     }
+
     button {
       padding: 8px 12px;
       border-radius: 999px;
@@ -75,207 +87,158 @@
       cursor: pointer;
       font-size: 0.9rem;
     }
+
     .btn-primary {
       background: #22c55e;
       color: #022c22;
       font-weight: 600;
       width: 100%;
     }
-    .btn-primary:hover {
-      background: #16a34a;
-    }
+
     .btn-secondary {
       background: #1f2937;
       color: #e5e7eb;
       border: 1px solid #374151;
-      padding-inline: 12px;
     }
-    .btn-secondary:hover {
-      background: #111827;
-    }
-    .btn-danger {
-      background: #ef4444;
-      color: white;
-    }
+
     .summary {
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 12px;
       font-size: 0.85rem;
     }
+
     .summary-item {
       padding: 8px 12px;
       border-radius: 999px;
       background: #020617;
       border: 1px solid #1f2937;
     }
-    .summary-actions {
-      margin-top: 12px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-      margin-top: 12px;
-    }
-    th, td {
-      padding: 6px 8px;
-      border-bottom: 1px solid #1f2937;
-      text-align: right;
-      white-space: nowrap;
-    }
-    th {
-      text-align: center;
-      background: #020617;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    th:first-child, td:first-child {
-      text-align: left;
-    }
-    tr:nth-child(even) td {
-      background: #020617;
-    }
-    .tag-win { color: #22c55e; font-weight: 600; }
-    .tag-loss { color: #f97316; font-weight: 600; }
-    .row-actions button {
-      font-size: 0.7rem;
-      padding: 4px 8px;
-      border-radius: 999px;
-    }
-    .footer {
-      margin-top: 16px;
-      font-size: 0.75rem;
-      color: #6b7280;
-      text-align: center;
-      padding-bottom: 8px;
-    }
 
-    /* linha para banca inicial */
-    .bank-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .bank-row label {
-      margin-bottom: 0;
-    }
-    .bank-row input {
-      max-width: 180px;
-    }
-    .bank-row .btn-primary {
-      width: auto;
-      padding-inline: 12px;
-    }
-
-    /* wrapper da tabela para scroll horizontal se precisar */
     .table-wrapper {
       width: 100%;
       overflow-x: auto;
     }
 
-    /* canvas do gráfico */
-    #bankChart {
+    table {
       width: 100%;
-      max-width: 100%;
-      border-radius: 8px;
-      background: #020617;
+      border-collapse: collapse;
+      font-size: 0.78rem;
     }
 
-    /* Ajustes para telas pequenas (celular) */
-    @media (max-width: 640px) {
-      body {
-        padding: 8px;
-      }
-      .card {
-        padding: 12px;
-      }
-      table {
-        font-size: 0.7rem;
-      }
-      /* Esconde BTC In (coluna 6) e BTC Out (coluna 7) no mobile */
-      th:nth-child(6), td:nth-child(6),
-      th:nth-child(7), td:nth-child(7) {
-        display: none;
-      }
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #1f2937;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    th:first-child, td:first-child { text-align: left; }
+
+    .tag-win { color: #22c55e; font-weight: 600; }
+    .tag-loss { color: #f97316; font-weight: 600; }
+
+    .footer {
+      margin-top: 16px;
+      font-size: 0.75rem;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    #bankChart {
+      width: 100%;
+      background: #020617;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <h1>Satoshis Tracker – Trades par/BTC</h1>
-  <div class="subtitle">
-    Registre seus trades em pares contra BTC e acompanhe o lucro em satoshis.
+
+  <!-- BIG ICON -->
+  <div style="text-align:center; margin-bottom:10px;">
+    <img src="icon-512.png" alt="logo"
+         style="width:120px; height:120px; border-radius:20px;">
   </div>
 
+  <h1>Satoshis Tracker – BTC Pair Trades</h1>
+  <div class="subtitle">Record your trades and track your satoshi growth.</div>
+
+  <!-- NEW TRADE CARD -->
   <div class="card">
-    <h2>Novo trade</h2>
+    <h2>New trade</h2>
+
     <form id="tradeForm">
       <div>
-        <label for="data">Data</label>
-        <input type="date" id="data" required />
+        <label for="data">Date (DD/MM/YYYY)</label>
+        <input type="text" id="data" placeholder="03/12/2025" required>
       </div>
+
       <div>
-        <label for="par">Par</label>
-        <input type="text" id="par" placeholder="Ex: XRP/BTC" required />
+        <label for="par">Pair</label>
+        <input type="text" id="par" placeholder="XRP/BTC" required>
       </div>
+
       <div>
-        <label for="quantidadeAlt">Quantidade (alt)</label>
-        <input type="number" step="0.00000001" id="quantidadeAlt" required />
+        <label for="quantidadeAlt">Alt quantity</label>
+        <input type="number" step="0.00000001" id="quantidadeAlt" required>
       </div>
+
       <div>
-        <label for="precoEntrada">Preço entrada (BTC)</label>
-        <input type="number" step="0.00000001" id="precoEntrada" required />
+        <label for="precoEntrada">Entry price (BTC)</label>
+        <input type="number" step="0.00000001" id="precoEntrada" required>
       </div>
+
       <div>
-        <label for="precoSaida">Preço saída (BTC)</label>
-        <input type="number" step="0.00000001" id="precoSaida" required />
+        <label for="precoSaida">Exit price (BTC)</label>
+        <input type="number" step="0.00000001" id="precoSaida" required>
       </div>
+
       <div>
-        <label for="taxaBtc">Taxa (BTC) [opcional]</label>
-        <input type="number" step="0.00000001" id="taxaBtc" placeholder="0 se paga em BNB" />
+        <label for="taxaBtc">Fee (BTC)</label>
+        <input type="number" step="0.00000001" id="taxaBtc" placeholder="0 if paid in BNB">
       </div>
+
       <div>
-        <button type="submit" class="btn-primary">Adicionar trade</button>
+        <button class="btn-primary">Add trade</button>
       </div>
     </form>
   </div>
 
+  <!-- SUMMARY CARD -->
   <div class="card">
-    <h2>Resumo</h2>
+    <h2>Summary</h2>
 
-    <div class="bank-row">
-      <label for="bancaInicial">Banca inicial (BTC):</label>
-      <input type="number" id="bancaInicial" step="0.00000001" placeholder="ex: 0.0025" />
-      <button type="button" class="btn-primary" id="btnSalvarBanca">Salvar</button>
+    <div style="margin-bottom:12px;">
+      <label for="bancaInicial">Initial bank (BTC):</label>
+      <input type="number" step="0.00000001" id="bancaInicial"
+             placeholder="0.0025" style="max-width:160px;">
+      <button class="btn-primary" id="btnSalvarBanca"
+              style="width:auto; margin-left:8px;">Save</button>
     </div>
 
     <div class="summary">
       <div class="summary-item" id="sumTotalTrades">Trades: 0</div>
       <div class="summary-item" id="sumWins">Win rate: 0%</div>
-      <div class="summary-item" id="sumBtcResult">Result BTC: 0</div>
+      <div class="summary-item" id="sumBtcResult">BTC Result: 0</div>
       <div class="summary-item" id="sumAvgRoi">Avg ROI: 0%</div>
       <div class="summary-item" id="sumBankInitial">Initial bank: —</div>
       <div class="summary-item" id="sumBankCurrent">Current bank: —</div>
       <div class="summary-item" id="sumBankGrowth">Growth: —</div>
     </div>
 
-    <div class="summary-actions">
-      <button type="button" class="btn-secondary" id="btnToggleChart">Bank chart</button>
-      <button type="button" class="btn-secondary" id="btnTogglePairs">Pairs summary</button>
+    <div style="margin-top:12px;">
+      <button class="btn-secondary" id="btnToggleChart">Bank chart</button>
+      <button class="btn-secondary" id="btnTogglePairs">Pairs summary</button>
     </div>
   </div>
 
+  <!-- BANK CHART -->
   <div class="card" id="cardChart" style="display:none;">
     <h2>Bank evolution (BTC)</h2>
     <canvas id="bankChart" height="200"></canvas>
   </div>
 
+  <!-- PAIRS SUMMARY -->
   <div class="card" id="cardPairs" style="display:none;">
     <h2>Pairs summary</h2>
     <div class="table-wrapper">
@@ -285,38 +248,34 @@
             <th>Pair</th>
             <th>Trades</th>
             <th>Wins</th>
-            <th>Total BTC result</th>
+            <th>Total BTC</th>
             <th>Avg ROI %</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- linhas via JS -->
-        </tbody>
+        <tbody></tbody>
       </table>
     </div>
   </div>
 
+  <!-- TRADE HISTORY -->
   <div class="card">
     <h2>Trade history</h2>
     <div class="table-wrapper">
       <table id="tradesTable">
         <thead>
           <tr>
-            <th>Data</th>
-            <th>Par</th>
-            <th>Qtd</th>
-            <th>Entrada (BTC)</th>
-            <th>Saída (BTC)</th>
+            <th>Date</th>
+            <th>Pair</th>
+            <th>Qty</th>
+            <th>Entry (BTC)</th>
+            <th>Exit (BTC)</th>
             <th>BTC In</th>
             <th>BTC Out</th>
             <th>BTC Result</th>
             <th>ROI %</th>
-            <th>Ações</th>
           </tr>
         </thead>
-        <tbody>
-          <!-- linhas serão inseridas via JS -->
-        </tbody>
+        <tbody></tbody>
       </table>
     </div>
   </div>
@@ -331,354 +290,220 @@
     const HISTORY_KEY = "btcBankHistory";
 
     function loadTrades() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        console.error("Erro ao carregar trades:", e);
-        return [];
-      }
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+      catch { return []; }
     }
 
-    function saveTrades(trades) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+    function saveTrades(t) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(t));
     }
 
     function loadBankInitial() {
-      try {
-        const raw = localStorage.getItem(BANK_KEY);
-        const val = raw ? parseFloat(raw) : 0;
-        return isNaN(val) ? 0 : val;
-      } catch (e) {
-        console.error("Erro ao carregar banca:", e);
-        return 0;
-      }
+      let v = parseFloat(localStorage.getItem(BANK_KEY));
+      return isNaN(v) ? 0 : v;
     }
 
-    function saveBankInitial(value) {
-      localStorage.setItem(BANK_KEY, String(value));
+    function saveBankInitial(v) {
+      localStorage.setItem(BANK_KEY, String(v));
     }
 
     function loadBankHistory() {
-      try {
-        const raw = localStorage.getItem(HISTORY_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) {
-        console.error("Erro ao carregar histórico:", e);
-        return [];
+      try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+      catch { return []; }
+    }
+
+    function saveBankHistory(h) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+    }
+
+    function updateBankHistory(val) {
+      const h = loadBankHistory();
+      if (!h.length || h[h.length - 1].value !== val) {
+        h.push({ time: new Date().toISOString(), value: val });
+        saveBankHistory(h);
       }
     }
 
-    function saveBankHistory(history) {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    function formatNumber(n, d = 8) { return Number(n).toFixed(d); }
+    function formatPercent(n) { return Number(n).toFixed(2) + "%"; }
+
+    function parseDate(str) {
+      // DD/MM/YYYY → YYYY-MM-DD
+      const [d, m, y] = str.split("/");
+      return `${y}-${m}-${d}`;
     }
 
-    function updateBankHistory(bancaAtual) {
-      if (!bancaAtual && bancaAtual !== 0) return;
-      const history = loadBankHistory();
-      const last = history[history.length - 1];
-      // evita repetir o mesmo valor muitas vezes
-      if (!last || Math.abs(last.value - bancaAtual) > 1e-12) {
-        history.push({
-          time: new Date().toISOString(),
-          value: bancaAtual
-        });
-        saveBankHistory(history);
+    // 🔵 MAIN RENDER FUNCTION
+    function renderTrades() {
+      const trades = loadTrades();
+      let total = 0, wins = 0;
+
+      const tbody = document.querySelector("#tradesTable tbody");
+      tbody.innerHTML = "";
+
+      trades.forEach((t, idx) => {
+        total += t.btcResult;
+        if (t.btcResult > 0) wins++;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${t.date}</td>
+          <td>${t.pair}</td>
+          <td>${formatNumber(t.qty, 4)}</td>
+          <td>${formatNumber(t.entry)}</td>
+          <td>${formatNumber(t.exit)}</td>
+          <td>${formatNumber(t.btcIn)}</td>
+          <td>${formatNumber(t.btcOut)}</td>
+          <td class="${t.btcResult >= 0 ? "tag-win" : "tag-loss"}">${formatNumber(t.btcResult)}</td>
+          <td class="${t.roi >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(t.roi)}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      const totalTrades = trades.length;
+      const avgROI = totalTrades ? trades.reduce((s, t) => s + t.roi, 0) / totalTrades : 0;
+
+      document.getElementById("sumTotalTrades").textContent = `Trades: ${totalTrades}`;
+      document.getElementById("sumWins").textContent = `Win rate: ${(wins / totalTrades * 100 || 0).toFixed(2)}%`;
+      document.getElementById("sumBtcResult").textContent = `BTC Result: ${formatNumber(total)}`;
+      document.getElementById("sumAvgRoi").textContent = `Avg ROI: ${avgROI.toFixed(2)}%`;
+
+      // BANK
+      const bankInit = loadBankInitial();
+      const bankNow = bankInit + total;
+
+      document.getElementById("sumBankInitial").textContent = `Initial bank: ${formatNumber(bankInit)}`;
+      document.getElementById("sumBankCurrent").textContent = `Current bank: ${formatNumber(bankNow)}`;
+      document.getElementById("sumBankGrowth").textContent =
+        `Growth: ${(bankInit ? (total / bankInit * 100) : 0).toFixed(2)}%`;
+
+      updateBankHistory(bankNow);
+      renderBankChart();
+      renderPairSummary();
+    }
+
+    // 🔵 PAIRS SUMMARY
+    function renderPairSummary() {
+      const trades = loadTrades();
+      const table = document.querySelector("#pairsTable tbody");
+      table.innerHTML = "";
+
+      const groups = {};
+
+      trades.forEach(t => {
+        if (!groups[t.pair]) groups[t.pair] = { trades: 0, wins: 0, btc: 0, roi: 0 };
+        groups[t.pair].trades++;
+        groups[t.pair].btc += t.btcResult;
+        groups[t.pair].roi += t.roi;
+        if (t.btcResult > 0) groups[t.pair].wins++;
+      });
+
+      Object.keys(groups).forEach(p => {
+        const g = groups[p];
+        const avg = g.roi / g.trades;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${p}</td>
+          <td>${g.trades}</td>
+          <td>${g.wins}</td>
+          <td class="${g.btc >= 0 ? "tag-win" : "tag-loss"}">${formatNumber(g.btc)}</td>
+          <td class="${avg >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(avg)}</td>
+        `;
+        table.appendChild(row);
+      });
+
+      if (!Object.keys(groups).length) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td colspan="5" style="text-align:center; color:#6b7280;">No trades</td>`;
+        table.appendChild(row);
       }
     }
 
-    function formatNumber(value, decimals = 8) {
-      return Number(value).toFixed(decimals);
-    }
-
-    function formatPercent(value) {
-      return (Number(value).toFixed(2)) + "%";
-    }
-
-    function updateBankSummary(totalBtcResult) {
-      const banca = loadBankInitial();
-      const input = document.getElementById("bancaInicial");
-      const elInit = document.getElementById("sumBankInitial");
-      const elCurr = document.getElementById("sumBankCurrent");
-      const elGrowth = document.getElementById("sumBankGrowth");
-
-      if (input && banca) {
-        input.value = banca.toFixed(8);
-      }
-
-      if (!elInit || !elCurr || !elGrowth) {
-        return { banca: 0, bancaAtual: 0 };
-      }
-
-      if (!banca) {
-        elInit.textContent = "Initial bank: —";
-        elCurr.textContent = "Current bank: —";
-        elGrowth.textContent = "Growth: —";
-        return { banca: 0, bancaAtual: 0 };
-      }
-
-      const bancaAtual = banca + totalBtcResult;
-      const growth = banca ? (totalBtcResult / banca) * 100 : 0;
-
-      elInit.textContent = "Initial bank: " + banca.toFixed(8);
-      elCurr.textContent = "Current bank: " + bancaAtual.toFixed(8);
-      elGrowth.textContent = "Growth: " + growth.toFixed(2) + "%";
-
-      return { banca, bancaAtual };
-    }
-
+    // 🔵 BANK CHART
     function renderBankChart() {
-      const canvas = document.getElementById("bankChart");
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
+      const c = document.getElementById("bankChart");
+      const ctx = c.getContext("2d");
       const history = loadBankHistory();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (!history.length) {
-        ctx.fillStyle = "#6b7280";
-        ctx.font = "12px system-ui";
-        ctx.fillText("No data yet. Add trades and set your initial bank.", 10, 20);
-        return;
-      }
+      ctx.clearRect(0, 0, c.width, c.height);
 
-      const width = canvas.width;
-      const height = canvas.height;
-      const padding = 20;
+      if (!history.length) return;
+
       const values = history.map(h => h.value);
-      const minVal = Math.min(...values);
-      const maxVal = Math.max(...values);
-      const range = maxVal - minVal || 1;
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const range = max - min || 1;
 
-      // fundo
-      ctx.fillStyle = "#020617";
-      ctx.fillRect(0, 0, width, height);
-
-      // linha eixo base
-      ctx.strokeStyle = "#1f2937";
-      ctx.beginPath();
-      ctx.moveTo(padding, height - padding);
-      ctx.lineTo(width - padding, height - padding);
-      ctx.stroke();
-
-      // linha de evolução
       ctx.strokeStyle = "#22c55e";
       ctx.lineWidth = 2;
       ctx.beginPath();
 
-      history.forEach((point, index) => {
-        const x = padding + (index / Math.max(history.length - 1, 1)) * (width - 2 * padding);
-        const y = height - padding - ((point.value - minVal) / range) * (height - 2 * padding);
-        if (index === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+      values.forEach((v, i) => {
+        const x = (i / (values.length - 1)) * c.width;
+        const y = c.height - ((v - min) / range) * c.height;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       });
 
       ctx.stroke();
-
-      // valor final
-      const last = history[history.length - 1];
-      const lastX = padding + ((history.length - 1) / Math.max(history.length - 1, 1)) * (width - 2 * padding);
-      const lastY = height - padding - ((last.value - minVal) / range) * (height - 2 * padding);
-
-      ctx.fillStyle = "#22c55e";
-      ctx.beginPath();
-      ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.font = "11px system-ui";
-      ctx.fillText(last.value.toFixed(8) + " BTC", lastX + 5, lastY - 5);
     }
 
-    function renderPairSummary(trades) {
-      const tbody = document.querySelector("#pairsTable tbody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-
-      const perPair = {};
-
-      trades.forEach(t => {
-        const key = t.par || "N/A";
-        if (!perPair[key]) {
-          perPair[key] = { trades: 0, wins: 0, totalBtc: 0, totalRoi: 0 };
-        }
-        const p = perPair[key];
-        p.trades += 1;
-        if (t.btcResultado > 0) p.wins += 1;
-        p.totalBtc += t.btcResultado;
-        p.totalRoi += t.roiPercent;
-      });
-
-      Object.entries(perPair).forEach(([pair, data]) => {
-        const avgRoi = data.trades ? data.totalRoi / data.trades : 0;
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${pair}</td>
-          <td>${data.trades}</td>
-          <td>${data.wins}</td>
-          <td class="${data.totalBtc >= 0 ? "tag-win" : "tag-loss"}">
-            ${formatNumber(data.totalBtc)}
-          </td>
-          <td class="${avgRoi >= 0 ? "tag-win" : "tag-loss"}">
-            ${formatPercent(avgRoi)}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      if (!Object.keys(perPair).length) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="5" style="text-align:center;color:#6b7280;">No trades yet.</td>`;
-        tbody.appendChild(tr);
-      }
-    }
-
-    function renderTrades() {
-      const trades = loadTrades();
-      const tbody = document.querySelector("#tradesTable tbody");
-      tbody.innerHTML = "";
-
-      let totalBtcResult = 0;
-      let wins = 0;
-
-      trades.forEach((t, index) => {
-        totalBtcResult += t.btcResultado;
-        if (t.btcResultado > 0) wins++;
-
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td>${t.data}</td>
-          <td>${t.par}</td>
-          <td>${formatNumber(t.quantidadeAlt, 4)}</td>
-          <td>${formatNumber(t.precoEntrada)}</td>
-          <td>${formatNumber(t.precoSaida)}</td>
-          <td>${formatNumber(t.btcEntrada)}</td>
-          <td>${formatNumber(t.btcSaida)}</td>
-          <td class="${t.btcResultado >= 0 ? "tag-win" : "tag-loss"}">
-            ${formatNumber(t.btcResultado)}
-          </td>
-          <td class="${t.roiPercent >= 0 ? "tag-win" : "tag-loss"}">
-            ${formatPercent(t.roiPercent)}
-          </td>
-          <td class="row-actions">
-            <button class="btn-danger" data-index="${index}">Excluir</button>
-          </td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-
-      const totalTrades = trades.length;
-      const winRate = totalTrades ? (wins / totalTrades) * 100 : 0;
-      const avgRoi = totalTrades
-        ? trades.reduce((acc, t) => acc + t.roiPercent, 0) / totalTrades
-        : 0;
-
-      document.getElementById("sumTotalTrades").textContent =
-        `Trades: ${totalTrades}`;
-      document.getElementById("sumWins").textContent =
-        `Win rate: ${winRate.toFixed(1)}%`;
-      document.getElementById("sumBtcResult").textContent =
-        `Result BTC: ${formatNumber(totalBtcResult)}`;
-      document.getElementById("sumAvgRoi").textContent =
-        `Avg ROI: ${avgRoi.toFixed(2)}%`;
-
-      document
-        .querySelectorAll("button.btn-danger")
-        .forEach(btn => {
-          btn.addEventListener("click", () => {
-            const idx = Number(btn.dataset.index);
-            const updated = loadTrades();
-            updated.splice(idx, 1);
-            saveTrades(updated);
-            renderTrades();
-          });
-        });
-
-      const bankInfo = updateBankSummary(totalBtcResult);
-      if (bankInfo.banca) {
-        updateBankHistory(bankInfo.bancaAtual);
-      }
-      renderBankChart();
-      renderPairSummary(trades);
-    }
-
-    document.getElementById("tradeForm").addEventListener("submit", (e) => {
+    // 🔵 FORM SUBMIT
+    document.getElementById("tradeForm").addEventListener("submit", e => {
       e.preventDefault();
-      const data = document.getElementById("data").value || new Date().toISOString().slice(0,10);
-      const par = document.getElementById("par").value.trim();
-      const quantidadeAlt = parseFloat(document.getElementById("quantidadeAlt").value);
-      const precoEntrada = parseFloat(document.getElementById("precoEntrada").value);
-      const precoSaida = parseFloat(document.getElementById("precoSaida").value);
-      const taxaBtc = parseFloat(document.getElementById("taxaBtc").value || "0");
 
-      if (!par || isNaN(quantidadeAlt) || isNaN(precoEntrada) || isNaN(precoSaida)) {
-        alert("Preencha todos os campos obrigatórios.");
+      const dateStr = document.getElementById("data").value.trim();
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+        alert("Date must be in DD/MM/YYYY format.");
         return;
       }
 
-      const btcEntrada = quantidadeAlt * precoEntrada;
-      const btcSaida = quantidadeAlt * precoSaida;
-      const btcResultado = btcSaida - btcEntrada - taxaBtc;
-      const roiPercent = btcEntrada !== 0
-        ? (btcResultado / btcEntrada) * 100
-        : 0;
+      const pair = document.getElementById("par").value.trim();
+      const qty = parseFloat(document.getElementById("quantidadeAlt").value);
+      const entry = parseFloat(document.getElementById("precoEntrada").value);
+      const exit = parseFloat(document.getElementById("precoSaida").value);
+      const fee = parseFloat(document.getElementById("taxaBtc").value || 0);
+
+      const btcIn = qty * entry;
+      const btcOut = qty * exit;
+      const btcResult = btcOut - btcIn - fee;
+      const roi = btcIn ? (btcResult / btcIn) * 100 : 0;
 
       const trades = loadTrades();
       trades.push({
-        data,
-        par,
-        quantidadeAlt,
-        precoEntrada,
-        precoSaida,
-        taxaBtc,
-        btcEntrada,
-        btcSaida,
-        btcResultado,
-        roiPercent,
+        date: dateStr,
+        pair,
+        qty,
+        entry,
+        exit,
+        btcIn,
+        btcOut,
+        btcResult,
+        roi
       });
+
       saveTrades(trades);
       renderTrades();
       e.target.reset();
-      document.getElementById("data").value = data;
     });
 
-    const btnSalvarBanca = document.getElementById("btnSalvarBanca");
-    if (btnSalvarBanca) {
-      btnSalvarBanca.addEventListener("click", () => {
-        const input = document.getElementById("bancaInicial");
-        const val = parseFloat(input.value);
-        if (isNaN(val) || val <= 0) {
-          alert("Informe um valor de banca inicial em BTC maior que zero.");
-          return;
-        }
-        saveBankInitial(val);
-        renderTrades();
-      });
-    }
+    document.getElementById("btnSalvarBanca").addEventListener("click", () => {
+      const v = parseFloat(document.getElementById("bancaInicial").value);
+      if (!v || v <= 0) return alert("Enter valid bank value");
+      saveBankInitial(v);
+      renderTrades();
+    });
 
-    const btnToggleChart = document.getElementById("btnToggleChart");
-    const btnTogglePairs = document.getElementById("btnTogglePairs");
-    const cardChart = document.getElementById("cardChart");
-    const cardPairs = document.getElementById("cardPairs");
+    document.getElementById("btnToggleChart").addEventListener("click", () => {
+      const c = document.getElementById("cardChart");
+      c.style.display = c.style.display === "none" ? "block" : "none";
+      renderBankChart();
+    });
 
-    if (btnToggleChart && cardChart) {
-      btnToggleChart.addEventListener("click", () => {
-        const visible = cardChart.style.display === "block";
-        cardChart.style.display = visible ? "none" : "block";
-        if (!visible) {
-          renderBankChart();
-        }
-      });
-    }
+    document.getElementById("btnTogglePairs").addEventListener("click", () => {
+      const c = document.getElementById("cardPairs");
+      c.style.display = c.style.display === "none" ? "block" : "none";
+    });
 
-    if (btnTogglePairs && cardPairs) {
-      btnTogglePairs.addEventListener("click", () => {
-        const visible = cardPairs.style.display === "block";
-        cardPairs.style.display = visible ? "none" : "block";
-      });
-    }
-
-    document.getElementById("data").value = new Date().toISOString().slice(0,10);
     renderTrades();
   </script>
 </body>
