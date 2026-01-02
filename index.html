@@ -86,6 +86,7 @@
       border: none;
       cursor: pointer;
       font-size: 0.9rem;
+      white-space: nowrap;
     }
 
     .btn-primary {
@@ -99,6 +100,11 @@
       background: #1f2937;
       color: #e5e7eb;
       border: 1px solid #374151;
+    }
+
+    .btn-danger {
+      background: #ef4444;
+      color: #fff;
     }
 
     .summary {
@@ -143,6 +149,27 @@
       font-size: 0.75rem;
       color: #6b7280;
       text-align: center;
+    }
+
+    .row-actions button{
+      font-size: 0.75rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      width: auto;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      margin-top: 8px;
+      line-height: 1.35;
     }
   </style>
 </head>
@@ -200,6 +227,11 @@
         <button class="btn-primary">Add trade</button>
       </div>
     </form>
+
+    <div class="hint">
+      Dates accept: <b>03122025</b>, <b>3-12-25</b>, <b>03.12.2025</b>, <b>2025-12-03</b> → saved as <b>DD/MM/YYYY</b><br/>
+      Pairs accept: <b>xrpbtc</b>, <b>xrp</b>, <b>XRP/BTC</b> → saved as <b>XRP/BTC</b>
+    </div>
   </div>
 
   <!-- SUMMARY CARD -->
@@ -213,8 +245,18 @@
       <div class="summary-item" id="sumAvgRoi">Avg ROI: 0%</div>
     </div>
 
-    <div style="margin-top:12px;">
+    <div class="btn-row">
       <button class="btn-secondary" id="btnTogglePairs">Pairs summary</button>
+      <button class="btn-secondary" id="btnExport">Export JSON</button>
+      <button class="btn-secondary" id="btnImport">Import JSON</button>
+      <button class="btn-danger" id="btnResetAll">Reset all data</button>
+      <input type="file" id="fileInput" accept="application/json" style="display:none;" />
+    </div>
+
+    <div class="hint">
+      ✅ Export creates a backup file of your trades.<br/>
+      ✅ Import can merge trades (recommended) or replace all if you choose.<br/>
+      ⚠️ Reset deletes all saved trades on this device/browser.
     </div>
   </div>
 
@@ -254,6 +296,7 @@
             <th>BTC Out</th>
             <th>BTC Result</th>
             <th>ROI %</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -343,13 +386,11 @@
       if (y < 1900 || y > 2099) return false;
       if (m < 1 || m > 12) return false;
       if (d < 1 || d > 31) return false;
-      // basic month-day check
       const daysInMonth = new Date(y, m, 0).getDate();
       return d <= daysInMonth;
     }
 
     // ---------- Normalize: PAIR ----------
-    // Accepts: xrpbtc, xrp/btc, xrp, XRPbtc,  XRP / BTC  -> XRP/BTC
     function normalizePair(input) {
       let s = String(input || "").trim().toUpperCase();
       if (!s) return null;
@@ -358,13 +399,11 @@
       s = s.replace(/-/g, "/");
 
       if (s.includes("/")) {
-        const [base, quote] = s.split("/");
+        const [base] = s.split("/");
         if (!base) return null;
-        // force quote BTC
         return `${base}/BTC`;
       }
 
-      // no slash
       if (s === "BTC") return null;
 
       if (s.endsWith("BTC") && s.length > 3) {
@@ -373,7 +412,6 @@
         return `${base}/BTC`;
       }
 
-      // just base
       return `${s}/BTC`;
     }
 
@@ -387,26 +425,24 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(t));
     }
 
-    // ---------- Migration (preserve old trades) ----------
+    // ---------- Migration ----------
     function migrateTradesIfNeeded(trades) {
-      // Old structure: { date, pair, qty, entry, exit, btcIn, btcOut, btcResult, roi }
-      // New: { openDate, closeDate, pair, ... }
       let changed = false;
 
       const migrated = trades.map(t => {
         const copy = { ...t };
 
-        // open/close
+        // old keys fallback
+        const legacyDate = copy.date || copy.data;
+
         if (!copy.openDate || !copy.closeDate) {
-          const legacyDate = copy.date || copy.data; // be generous
-          if (legacyDate && (!copy.openDate || !copy.closeDate)) {
+          if (legacyDate) {
             copy.openDate = copy.openDate || legacyDate;
             copy.closeDate = copy.closeDate || legacyDate;
             changed = true;
           }
         }
 
-        // pair normalization (safe)
         if (copy.pair && typeof copy.pair === "string") {
           const np = normalizePair(copy.pair);
           if (np && np !== copy.pair) {
@@ -415,7 +451,6 @@
           }
         }
 
-        // date normalization (safe)
         if (copy.openDate) {
           const nd = normalizeDate(copy.openDate) || copy.openDate;
           if (nd !== copy.openDate) { copy.openDate = nd; changed = true; }
@@ -432,6 +467,19 @@
       return migrated;
     }
 
+    // ---------- Trade identity (avoid duplicates on import) ----------
+    function tradeId(t) {
+      // stable-ish id: open|close|pair|qty|entry|exit|fee
+      const o = t.openDate || t.date || "";
+      const c = t.closeDate || t.date || "";
+      const p = (t.pair || "").toUpperCase();
+      const qty = Number(t.qty || 0).toFixed(8);
+      const entry = Number(t.entry || 0).toFixed(8);
+      const exit = Number(t.exit || 0).toFixed(8);
+      const fee = Number(t.fee || t.feeBtc || 0).toFixed(8);
+      return `${o}|${c}|${p}|${qty}|${entry}|${exit}|${fee}`;
+    }
+
     // ---------- Render ----------
     function renderTrades() {
       let trades = loadTrades();
@@ -441,7 +489,7 @@
       const tbody = document.querySelector("#tradesTable tbody");
       tbody.innerHTML = "";
 
-      trades.forEach((t) => {
+      trades.forEach((t, idx) => {
         total += Number(t.btcResult || 0);
         if (Number(t.btcResult || 0) > 0) wins++;
 
@@ -457,6 +505,7 @@
           <td>${formatNumber(t.btcOut || 0)}</td>
           <td class="${Number(t.btcResult || 0) >= 0 ? "tag-win" : "tag-loss"}">${formatNumber(t.btcResult || 0)}</td>
           <td class="${Number(t.roi || 0) >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(t.roi || 0)}</td>
+          <td class="row-actions"><button class="btn-danger" data-idx="${idx}">Delete</button></td>
         `;
         tbody.appendChild(row);
       });
@@ -470,6 +519,21 @@
       document.getElementById("sumAvgRoi").textContent = `Avg ROI: ${avgROI.toFixed(2)}%`;
 
       renderPairSummary(trades);
+      attachDeleteHandlers();
+    }
+
+    function attachDeleteHandlers() {
+      document.querySelectorAll('button[data-idx]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = Number(btn.dataset.idx);
+          const trades = migrateTradesIfNeeded(loadTrades());
+          if (!Number.isFinite(idx) || idx < 0 || idx >= trades.length) return;
+          if (!confirm("Delete this trade?")) return;
+          trades.splice(idx, 1);
+          saveTrades(trades);
+          renderTrades();
+        });
+      });
     }
 
     function renderPairSummary(trades) {
@@ -534,7 +598,6 @@
     document.getElementById("tradeForm").addEventListener("submit", e => {
       e.preventDefault();
 
-      // Normalize inputs (accept messy input)
       const openRaw = document.getElementById("openDate").value;
       const closeRaw = document.getElementById("closeDate").value;
       const pairRaw = document.getElementById("pair").value;
@@ -543,18 +606,9 @@
       const closeDate = normalizeDate(closeRaw);
       const pair = normalizePair(pairRaw);
 
-      if (!openDate) {
-        alert("Invalid open date. Use something like 03/12/2025 (or 03122025).");
-        return;
-      }
-      if (!closeDate) {
-        alert("Invalid close date. Use something like 05/12/2025 (or 05122025).");
-        return;
-      }
-      if (!pair) {
-        alert("Invalid pair. Examples: XRP/BTC, xrpbtc, xrp");
-        return;
-      }
+      if (!openDate) return alert("Invalid open date.");
+      if (!closeDate) return alert("Invalid close date.");
+      if (!pair) return alert("Invalid pair.");
 
       const qty = parseFloat(document.getElementById("qty").value);
       const entry = parseFloat(document.getElementById("entry").value);
@@ -589,6 +643,117 @@
       saveTrades(trades);
       renderTrades();
       e.target.reset();
+    });
+
+    // ---------- Export ----------
+    document.getElementById("btnExport").addEventListener("click", () => {
+      const trades = migrateTradesIfNeeded(loadTrades());
+      const payload = {
+        app: "Satoshis Tracker",
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        count: trades.length,
+        trades
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0,10);
+      a.href = url;
+      a.download = `satoshis-tracker-backup-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    });
+
+    // ---------- Import ----------
+    const fileInput = document.getElementById("fileInput");
+    document.getElementById("btnImport").addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = "";
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        let imported = [];
+        if (Array.isArray(data)) imported = data;
+        else if (data && Array.isArray(data.trades)) imported = data.trades;
+        else throw new Error("Invalid file format.");
+
+        // Normalize imported
+        imported = imported.map(t => {
+          const openDate = normalizeDate(t.openDate || t.date || t.data);
+          const closeDate = normalizeDate(t.closeDate || t.date || t.data);
+          const pair = normalizePair(t.pair || t.par);
+          const qty = Number(t.qty ?? t.quantidadeAlt ?? 0);
+          const entry = Number(t.entry ?? t.precoEntrada ?? 0);
+          const exit = Number(t.exit ?? t.precoSaida ?? 0);
+          const fee = Number(t.fee ?? t.taxaBtc ?? 0);
+
+          const btcIn = Number.isFinite(t.btcIn) ? Number(t.btcIn) : qty * entry;
+          const btcOut = Number.isFinite(t.btcOut) ? Number(t.btcOut) : qty * exit;
+          const btcResult = Number.isFinite(t.btcResult) ? Number(t.btcResult) : (btcOut - btcIn - fee);
+          const roi = Number.isFinite(t.roi) ? Number(t.roi) : (btcIn ? (btcResult / btcIn) * 100 : 0);
+
+          return { openDate, closeDate, pair, qty, entry, exit, fee, btcIn, btcOut, btcResult, roi };
+        }).filter(t => t.openDate && t.closeDate && t.pair && Number.isFinite(t.qty) && Number.isFinite(t.entry) && Number.isFinite(t.exit));
+
+        const mode = prompt(
+          "Import mode:\n\nType 1 to MERGE (recommended)\nType 2 to REPLACE ALL\n\nYour choice:",
+          "1"
+        );
+
+        if (mode !== "1" && mode !== "2") {
+          alert("Import cancelled.");
+          return;
+        }
+
+        if (mode === "2") {
+          if (!confirm("Replace ALL local trades with imported file?")) return;
+          saveTrades(imported);
+          renderTrades();
+          alert(`Imported ${imported.length} trades (replaced).`);
+          return;
+        }
+
+        // MERGE
+        const existing = migrateTradesIfNeeded(loadTrades());
+        const existingIds = new Set(existing.map(tradeId));
+
+        let added = 0;
+        imported.forEach(t => {
+          const id = tradeId(t);
+          if (!existingIds.has(id)) {
+            existing.push(t);
+            existingIds.add(id);
+            added++;
+          }
+        });
+
+        saveTrades(existing);
+        renderTrades();
+        alert(`Imported ${imported.length} trades.\nAdded: ${added}\nSkipped duplicates: ${imported.length - added}`);
+      } catch (err) {
+        console.error(err);
+        alert("Could not import file. Make sure it's a valid JSON backup.");
+      }
+    });
+
+    // ---------- Reset all ----------
+    document.getElementById("btnResetAll").addEventListener("click", () => {
+      const ok = confirm("This will DELETE ALL saved trades on this device/browser.\n\nContinue?");
+      if (!ok) return;
+      localStorage.removeItem(STORAGE_KEY);
+      renderTrades();
+      alert("All data reset.");
     });
 
     // ---------- Toggle pairs ----------
