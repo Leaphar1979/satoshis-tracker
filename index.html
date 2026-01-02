@@ -4,11 +4,12 @@
   <meta charset="UTF-8" />
   <title>Satoshis Tracker – BTC Pair Trades</title>
 
-  <!-- iPhone PWA settings -->
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- iPhone PWA -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="Satoshis Tracker" />
+  <meta name="theme-color" content="#050816" />
 
   <!-- App Icon -->
   <link rel="icon" type="image/png" href="icon-512.png" />
@@ -16,254 +17,284 @@
 
   <style>
     * { box-sizing: border-box; }
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      margin: 0;
+    html, body { height: 100%; }
+    body{
+      font-family: system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      margin:0;
       padding: 16px;
-      background: #050816;
-      color: #e5e7eb;
+      padding-top: calc(16px + env(safe-area-inset-top));
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      background:#050816;
+      color:#e5e7eb;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
     }
 
-    h1 {
-      margin-top: 0;
-      margin-bottom: 8px;
-      text-align: center;
+    .brand{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+      margin-bottom:14px;
+      text-align:center;
+    }
+    .brand img{
+      width:120px;height:120px;border-radius:22px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.55);
+    }
+    h1{
+      margin:0;
+      font-size:1.45rem;
+      letter-spacing:.2px;
+    }
+    .subtitle{
+      margin:0;
+      margin-top:4px;
+      font-size:.9rem;
+      color:#9ca3af;
+      max-width: 28rem;
     }
 
-    .subtitle {
-      font-size: 0.85rem;
-      color: #9ca3af;
-      margin-bottom: 16px;
-      text-align: center;
+    .card{
+      background:#111827;
+      border-radius:16px;
+      padding:16px;
+      margin:14px 0;
+      box-shadow: 0 10px 28px rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.04);
+    }
+    .card h2{
+      margin:0 0 12px 0;
+      font-size:1.05rem;
+      letter-spacing:.2px;
     }
 
-    .card {
-      background: #111827;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    /* Form */
+    form{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      align-items:end;
+    }
+    .field label{
+      display:block;
+      font-size:.82rem;
+      color:#9ca3af;
+      margin-bottom:6px;
+    }
+    input{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid #374151;
+      background:#020617;
+      color:#e5e7eb;
+      font-size:.95rem;
+      height:44px;
+    }
+    input:focus{
+      outline:none;
+      border-color:#22c55e;
+      box-shadow: 0 0 0 2px rgba(34,197,94,.18);
     }
 
-    .card h2 {
-      font-size: 1.1rem;
-      margin-top: 0;
-      margin-bottom: 12px;
-    }
+    .span-2{ grid-column: 1 / -1; }
 
-    form {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
+    .btn{
+      height:44px;
+      padding: 0 14px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      font-size:.95rem;
+      font-weight:650;
+      transition: transform .05s ease;
+      white-space: nowrap;
     }
+    .btn:active{ transform: scale(.98); }
 
-    label {
-      font-size: 0.8rem;
-      color: #9ca3af;
-      display: block;
-      margin-bottom: 4px;
+    .btn-primary{
+      background:#22c55e;
+      color:#022c22;
+      width:100%;
     }
-
-    input {
-      width: 100%;
-      padding: 6px 8px;
-      border-radius: 8px;
-      border: 1px solid #374151;
-      background: #020617;
-      color: #e5e7eb;
-      font-size: 0.9rem;
+    .btn-secondary{
+      background:#0b1223;
+      color:#e5e7eb;
+      border:1px solid #374151;
     }
-
-    input:focus {
-      outline: none;
-      border-color: #22c55e;
-      box-shadow: 0 0 0 1px #22c55e33;
-    }
-
-    button {
-      padding: 8px 12px;
-      border-radius: 999px;
+    .btn-danger{
+      background:#ef4444;
+      color:white;
       border: none;
-      cursor: pointer;
-      font-size: 0.9rem;
-      white-space: nowrap;
     }
 
-    .btn-primary {
-      background: #22c55e;
-      color: #022c22;
-      font-weight: 600;
-      width: 100%;
+    /* Summary pills */
+    .summary{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      font-size:.88rem;
+    }
+    .pill{
+      padding:10px 12px;
+      border-radius:999px;
+      background:#020617;
+      border:1px solid #1f2937;
+      color:#e5e7eb;
     }
 
-    .btn-secondary {
-      background: #1f2937;
-      color: #e5e7eb;
-      border: 1px solid #374151;
+    /* Actions row */
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:12px;
     }
 
-    .btn-danger {
-      background: #ef4444;
-      color: #fff;
+    /* Tables */
+    .table-wrap{ width:100%; overflow-x:auto; }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:.82rem;
+      min-width: 720px;
+    }
+    th, td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      text-align:right;
+      white-space:nowrap;
+    }
+    th{
+      color:#cbd5e1;
+      font-weight:650;
+      background:#0b1223;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    th:first-child, td:first-child{ text-align:left; }
+    tr:nth-child(even) td{ background: rgba(2,6,23,.35); }
+
+    .tag-win{ color:#22c55e; font-weight:700; }
+    .tag-loss{ color:#f97316; font-weight:700; }
+
+    /* Trash icon button */
+    .trash{
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.10);
+      color:#e5e7eb;
+      border-radius: 12px;
+      width: 38px;
+      height: 34px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      font-size: 16px;
+    }
+    .trash:active{ transform: scale(.98); }
+    .trash:hover{ border-color: rgba(255,255,255,.18); }
+
+    .footer{
+      text-align:center;
+      color:#6b7280;
+      font-size:.78rem;
+      margin: 18px 0 6px;
     }
 
-    .summary {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      font-size: 0.85rem;
-    }
-
-    .summary-item {
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #020617;
-      border: 1px solid #1f2937;
-    }
-
-    .table-wrapper {
-      width: 100%;
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.78rem;
-    }
-
-    th, td {
-      padding: 6px 8px;
-      border-bottom: 1px solid #1f2937;
-      white-space: nowrap;
-      text-align: right;
-    }
-
-    th:first-child, td:first-child { text-align: left; }
-
-    .tag-win { color: #22c55e; font-weight: 600; }
-    .tag-loss { color: #f97316; font-weight: 600; }
-
-    .footer {
-      margin-top: 16px;
-      font-size: 0.75rem;
-      color: #6b7280;
-      text-align: center;
-    }
-
-    .row-actions button{
-      font-size: 0.75rem;
-      padding: 6px 10px;
-      border-radius: 999px;
-      width: auto;
-    }
-
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .hint {
-      font-size: 0.78rem;
-      color: #94a3b8;
-      margin-top: 8px;
-      line-height: 1.35;
+    /* Mobile tweaks */
+    @media (max-width: 520px){
+      form{ grid-template-columns: 1fr 1fr; }
+      h1{ font-size:1.35rem; }
+      .brand img{ width:110px;height:110px; }
+      table{ font-size:.80rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- BIG ICON -->
-  <div style="text-align:center; margin-bottom:10px;">
-    <img src="icon-512.png" alt="logo" style="width:120px; height:120px; border-radius:20px;">
-  </div>
-
-  <h1>Satoshis Tracker – BTC Pair Trades</h1>
-  <div class="subtitle">Record your trades and track your satoshi growth.</div>
-
-  <!-- NEW TRADE CARD -->
-  <div class="card">
-    <h2>New trade</h2>
-
-    <form id="tradeForm">
-      <div>
-        <label for="openDate">Open date (DD/MM/YYYY)</label>
-        <input type="text" id="openDate" placeholder="03/12/2025" required>
-      </div>
-
-      <div>
-        <label for="closeDate">Close date (DD/MM/YYYY)</label>
-        <input type="text" id="closeDate" placeholder="05/12/2025" required>
-      </div>
-
-      <div>
-        <label for="pair">Pair (auto → XXX/BTC)</label>
-        <input type="text" id="pair" placeholder="xrpbtc / xrp / XRP/BTC" required>
-      </div>
-
-      <div>
-        <label for="qty">Alt quantity</label>
-        <input type="number" step="0.00000001" id="qty" required>
-      </div>
-
-      <div>
-        <label for="entry">Entry price (BTC)</label>
-        <input type="number" step="0.00000001" id="entry" required>
-      </div>
-
-      <div>
-        <label for="exit">Exit price (BTC)</label>
-        <input type="number" step="0.00000001" id="exit" required>
-      </div>
-
-      <div>
-        <label for="fee">Fee (BTC) [optional]</label>
-        <input type="number" step="0.00000001" id="fee" placeholder="0 if paid in BNB">
-      </div>
-
-      <div>
-        <button class="btn-primary">Add trade</button>
-      </div>
-    </form>
-
-    <div class="hint">
-      Dates accept: <b>03122025</b>, <b>3-12-25</b>, <b>03.12.2025</b>, <b>2025-12-03</b> → saved as <b>DD/MM/YYYY</b><br/>
-      Pairs accept: <b>xrpbtc</b>, <b>xrp</b>, <b>XRP/BTC</b> → saved as <b>XRP/BTC</b>
+  <div class="brand">
+    <img src="icon-512.png" alt="Satoshis Tracker">
+    <div>
+      <h1>Satoshis Tracker – BTC Pair Trades</h1>
+      <p class="subtitle">Record your trades and track your satoshi growth.</p>
     </div>
   </div>
 
-  <!-- SUMMARY CARD -->
+  <!-- NEW TRADE -->
+  <div class="card">
+    <h2>New trade</h2>
+
+    <form id="tradeForm" autocomplete="off">
+      <div class="field">
+        <label for="openDate">Open date</label>
+        <input id="openDate" type="text" inputmode="numeric" placeholder="DD/MM/YYYY" required />
+      </div>
+
+      <div class="field">
+        <label for="closeDate">Close date</label>
+        <input id="closeDate" type="text" inputmode="numeric" placeholder="DD/MM/YYYY" required />
+      </div>
+
+      <div class="field">
+        <label for="pair">Pair</label>
+        <input id="pair" type="text" placeholder="XRP/BTC" required />
+      </div>
+
+      <div class="field">
+        <label for="altQty">Alt quantity</label>
+        <input id="altQty" type="number" step="0.00000001" required />
+      </div>
+
+      <div class="field">
+        <label for="entryPrice">Entry price (BTC)</label>
+        <input id="entryPrice" type="number" step="0.00000001" required />
+      </div>
+
+      <div class="field">
+        <label for="exitPrice">Exit price (BTC)</label>
+        <input id="exitPrice" type="number" step="0.00000001" required />
+      </div>
+
+      <div class="field span-2">
+        <label for="feeBtc">Fee (BTC)</label>
+        <input id="feeBtc" type="number" step="0.00000001" placeholder="0 if paid in BNB" />
+      </div>
+
+      <div class="span-2">
+        <button class="btn btn-primary" type="submit">Add trade</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- SUMMARY -->
   <div class="card">
     <h2>Summary</h2>
 
     <div class="summary">
-      <div class="summary-item" id="sumTotalTrades">Trades: 0</div>
-      <div class="summary-item" id="sumWins">Win rate: 0%</div>
-      <div class="summary-item" id="sumBtcResult">BTC Result: 0</div>
-      <div class="summary-item" id="sumAvgRoi">Avg ROI: 0%</div>
+      <div class="pill" id="sumTrades">Trades: 0</div>
+      <div class="pill" id="sumWinRate">Win rate: 0%</div>
+      <div class="pill" id="sumBtc">BTC Result: 0</div>
+      <div class="pill" id="sumAvgRoi">Avg ROI: 0%</div>
     </div>
 
-    <div class="btn-row">
-      <button class="btn-secondary" id="btnTogglePairs">Pairs summary</button>
-      <button class="btn-secondary" id="btnExport">Export JSON</button>
-      <button class="btn-secondary" id="btnImport">Import JSON</button>
-      <button class="btn-danger" id="btnResetAll">Reset all data</button>
-      <input type="file" id="fileInput" accept="application/json" style="display:none;" />
-    </div>
-
-    <div class="hint">
-      ✅ Export creates a backup file of your trades.<br/>
-      ✅ Import can merge trades (recommended) or replace all if you choose.<br/>
-      ⚠️ Reset deletes all saved trades on this device/browser.
+    <div class="actions">
+      <button class="btn btn-secondary" id="btnPairs" type="button">Pairs summary</button>
+      <button class="btn btn-secondary" id="btnExport" type="button">Export JSON</button>
+      <label class="btn btn-secondary" for="fileImport" style="display:inline-flex;align-items:center;justify-content:center;">
+        Import JSON
+      </label>
+      <input id="fileImport" type="file" accept="application/json" style="display:none;">
+      <button class="btn btn-danger" id="btnReset" type="button">Reset all data</button>
     </div>
   </div>
 
   <!-- PAIRS SUMMARY -->
-  <div class="card" id="cardPairs" style="display:none;">
+  <div class="card" id="pairsCard" style="display:none;">
     <h2>Pairs summary</h2>
-    <div class="table-wrapper">
+    <div class="table-wrap">
       <table id="pairsTable">
         <thead>
           <tr>
@@ -282,7 +313,7 @@
   <!-- TRADE HISTORY -->
   <div class="card">
     <h2>Trade history</h2>
-    <div class="table-wrapper">
+    <div class="table-wrap">
       <table id="tradesTable">
         <thead>
           <tr>
@@ -290,13 +321,13 @@
             <th>Close</th>
             <th>Pair</th>
             <th>Qty</th>
-            <th>Entry (BTC)</th>
-            <th>Exit (BTC)</th>
+            <th>Entry</th>
+            <th>Exit</th>
             <th>BTC In</th>
             <th>BTC Out</th>
             <th>BTC Result</th>
             <th>ROI %</th>
-            <th>Actions</th>
+            <th>🗑️</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -304,328 +335,278 @@
     </div>
   </div>
 
-  <div class="footer">
-    Data stored locally (localStorage). You are farming sats. 🚀
-  </div>
+  <div class="footer">Data stored locally (localStorage). You are farming sats. 🚀</div>
 
   <script>
+    // --- Storage keys (KEEP to preserve existing data) ---
     const STORAGE_KEY = "btcPairTrades";
 
-    // ---------- Helpers: format ----------
-    function formatNumber(n, d = 8) { return Number(n).toFixed(d); }
-    function formatPercent(n) { return Number(n).toFixed(2) + "%"; }
+    // ---------- Helpers ----------
+    const pad2 = (n) => String(n).padStart(2, "0");
 
-    // ---------- Normalize: DATE ----------
-    // Accepts: 03122025, 3/12/2025, 03-12-25, 03.12.2025, 2025-12-03
-    function normalizeDate(input) {
-      const s = String(input || "").trim();
-      if (!s) return null;
+    function formatNumber(n, d = 8) {
+      const num = Number(n);
+      if (!isFinite(num)) return "0";
+      return num.toFixed(d);
+    }
 
-      // If looks like YYYY-MM-DD or YYYY/MM/DD
-      const isoLike = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
-      if (isoLike) {
-        const y = parseInt(isoLike[1], 10);
-        const m = parseInt(isoLike[2], 10);
-        const d = parseInt(isoLike[3], 10);
-        if (!isValidYMD(y, m, d)) return null;
-        return toDDMMYYYY(d, m, y);
+    function formatPercent(n) {
+      const num = Number(n);
+      if (!isFinite(num)) return "0.00%";
+      return num.toFixed(2) + "%";
+    }
+
+    function loadTrades() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
       }
+    }
 
-      // Extract digits only
-      const digits = s.replace(/\D/g, "");
-      if (digits.length === 8) {
-        // Decide between DDMMYYYY and YYYYMMDD
-        const first4 = parseInt(digits.slice(0,4), 10);
-        if (first4 >= 1900 && first4 <= 2099) {
-          const y = first4;
-          const m = parseInt(digits.slice(4,6), 10);
-          const d = parseInt(digits.slice(6,8), 10);
-          if (!isValidYMD(y, m, d)) return null;
-          return toDDMMYYYY(d, m, y);
-        } else {
-          const d = parseInt(digits.slice(0,2), 10);
-          const m = parseInt(digits.slice(2,4), 10);
-          const y = parseInt(digits.slice(4,8), 10);
-          if (!isValidYMD(y, m, d)) return null;
-          return toDDMMYYYY(d, m, y);
+    function saveTrades(trades) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trades));
+    }
+
+    // Normalize pair input → "XXX/BTC"
+    function normalizePair(input) {
+      let s = (input || "").trim().toUpperCase();
+      s = s.replace(/\s+/g, "");
+      if (!s) return "";
+
+      // If user typed "XRPBTC" or "XRP-BTC" or "XRP/BTC"
+      s = s.replace(/[-_]/g, "/");
+      if (s.includes("/")) {
+        const [a, b] = s.split("/");
+        if (a && b) {
+          if (b === "BTC") return `${a}/BTC`;
+          // If user typed BTC/XXX, keep as-is (rare) or flip? We'll keep.
+          return `${a}/${b}`;
         }
       }
 
-      if (digits.length === 6) {
-        // DDMMYY -> 20YY
-        const d = parseInt(digits.slice(0,2), 10);
-        const m = parseInt(digits.slice(2,4), 10);
-        const y = 2000 + parseInt(digits.slice(4,6), 10);
-        if (!isValidYMD(y, m, d)) return null;
-        return toDDMMYYYY(d, m, y);
+      // If typed ends with BTC (XRPBTC)
+      if (s.endsWith("BTC")) {
+        const a = s.slice(0, -3);
+        if (a) return `${a}/BTC`;
       }
 
-      // If typed with separators like D/M/YYYY
-      const dmY = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2}|\d{4})$/);
-      if (dmY) {
-        const d = parseInt(dmY[1], 10);
-        const m = parseInt(dmY[2], 10);
-        let y = parseInt(dmY[3], 10);
-        if (String(dmY[3]).length === 2) y = 2000 + y;
-        if (!isValidYMD(y, m, d)) return null;
-        return toDDMMYYYY(d, m, y);
-      }
-
-      return null;
-    }
-
-    function toDDMMYYYY(d, m, y) {
-      const dd = String(d).padStart(2, "0");
-      const mm = String(m).padStart(2, "0");
-      const yyyy = String(y).padStart(4, "0");
-      return `${dd}/${mm}/${yyyy}`;
-    }
-
-    function isValidYMD(y, m, d) {
-      if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return false;
-      if (y < 1900 || y > 2099) return false;
-      if (m < 1 || m > 12) return false;
-      if (d < 1 || d > 31) return false;
-      const daysInMonth = new Date(y, m, 0).getDate();
-      return d <= daysInMonth;
-    }
-
-    // ---------- Normalize: PAIR ----------
-    function normalizePair(input) {
-      let s = String(input || "").trim().toUpperCase();
-      if (!s) return null;
-
-      s = s.replace(/\s+/g, "");
-      s = s.replace(/-/g, "/");
-
-      if (s.includes("/")) {
-        const [base] = s.split("/");
-        if (!base) return null;
-        return `${base}/BTC`;
-      }
-
-      if (s === "BTC") return null;
-
-      if (s.endsWith("BTC") && s.length > 3) {
-        const base = s.slice(0, -3);
-        if (!base) return null;
-        return `${base}/BTC`;
-      }
-
+      // If user typed only "XRP"
       return `${s}/BTC`;
     }
 
-    // ---------- Storage ----------
-    function loadTrades() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
-      catch { return []; }
+    // Normalize date input to DD/MM/YYYY
+    // Accepts: 03122025, 3/12/2025, 03-12-25, 03.12.2025, 2025-12-03
+    function normalizeDate(input) {
+      let s = (input || "").trim();
+      if (!s) return "";
+
+      // yyyy-mm-dd
+      const iso = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+      if (iso) {
+        const y = iso[1];
+        const m = pad2(iso[2]);
+        const d = pad2(iso[3]);
+        return `${d}/${m}/${y}`;
+      }
+
+      // dd-mm-yyyy or dd/mm/yyyy or dd.mm.yyyy
+      const dmy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/);
+      if (dmy) {
+        const d = pad2(dmy[1]);
+        const m = pad2(dmy[2]);
+        let y = dmy[3];
+        if (y.length === 2) y = "20" + y;
+        return `${d}/${m}/${y}`;
+      }
+
+      // digits only: ddmmyyyy
+      const digits = s.replace(/\D/g, "");
+      if (digits.length === 8) {
+        const d = digits.slice(0, 2);
+        const m = digits.slice(2, 4);
+        const y = digits.slice(4, 8);
+        return `${d}/${m}/${y}`;
+      }
+
+      return ""; // invalid
     }
 
-    function saveTrades(t) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(t));
-    }
+    // ---------- UI ----------
+    const el = (id) => document.getElementById(id);
 
-    // ---------- Migration ----------
-    function migrateTradesIfNeeded(trades) {
-      let changed = false;
-
-      const migrated = trades.map(t => {
-        const copy = { ...t };
-
-        // old keys fallback
-        const legacyDate = copy.date || copy.data;
-
-        if (!copy.openDate || !copy.closeDate) {
-          if (legacyDate) {
-            copy.openDate = copy.openDate || legacyDate;
-            copy.closeDate = copy.closeDate || legacyDate;
-            changed = true;
-          }
-        }
-
-        if (copy.pair && typeof copy.pair === "string") {
-          const np = normalizePair(copy.pair);
-          if (np && np !== copy.pair) {
-            copy.pair = np;
-            changed = true;
-          }
-        }
-
-        if (copy.openDate) {
-          const nd = normalizeDate(copy.openDate) || copy.openDate;
-          if (nd !== copy.openDate) { copy.openDate = nd; changed = true; }
-        }
-        if (copy.closeDate) {
-          const nd = normalizeDate(copy.closeDate) || copy.closeDate;
-          if (nd !== copy.closeDate) { copy.closeDate = nd; changed = true; }
-        }
-
-        return copy;
-      });
-
-      if (changed) saveTrades(migrated);
-      return migrated;
-    }
-
-    // ---------- Trade identity (avoid duplicates on import) ----------
-    function tradeId(t) {
-      // stable-ish id: open|close|pair|qty|entry|exit|fee
-      const o = t.openDate || t.date || "";
-      const c = t.closeDate || t.date || "";
-      const p = (t.pair || "").toUpperCase();
-      const qty = Number(t.qty || 0).toFixed(8);
-      const entry = Number(t.entry || 0).toFixed(8);
-      const exit = Number(t.exit || 0).toFixed(8);
-      const fee = Number(t.fee || t.feeBtc || 0).toFixed(8);
-      return `${o}|${c}|${p}|${qty}|${entry}|${exit}|${fee}`;
-    }
-
-    // ---------- Render ----------
-    function renderTrades() {
-      let trades = loadTrades();
-      trades = migrateTradesIfNeeded(trades);
-
-      let total = 0, wins = 0;
-      const tbody = document.querySelector("#tradesTable tbody");
+    function renderPairsSummary(trades) {
+      const tbody = el("pairsTable").querySelector("tbody");
       tbody.innerHTML = "";
-
-      trades.forEach((t, idx) => {
-        total += Number(t.btcResult || 0);
-        if (Number(t.btcResult || 0) > 0) wins++;
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${t.openDate || "—"}</td>
-          <td>${t.closeDate || "—"}</td>
-          <td>${t.pair || "—"}</td>
-          <td>${formatNumber(t.qty || 0, 4)}</td>
-          <td>${formatNumber(t.entry || 0)}</td>
-          <td>${formatNumber(t.exit || 0)}</td>
-          <td>${formatNumber(t.btcIn || 0)}</td>
-          <td>${formatNumber(t.btcOut || 0)}</td>
-          <td class="${Number(t.btcResult || 0) >= 0 ? "tag-win" : "tag-loss"}">${formatNumber(t.btcResult || 0)}</td>
-          <td class="${Number(t.roi || 0) >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(t.roi || 0)}</td>
-          <td class="row-actions"><button class="btn-danger" data-idx="${idx}">Delete</button></td>
-        `;
-        tbody.appendChild(row);
-      });
-
-      const totalTrades = trades.length;
-      const avgROI = totalTrades ? trades.reduce((s, t) => s + Number(t.roi || 0), 0) / totalTrades : 0;
-
-      document.getElementById("sumTotalTrades").textContent = `Trades: ${totalTrades}`;
-      document.getElementById("sumWins").textContent = `Win rate: ${(wins / totalTrades * 100 || 0).toFixed(2)}%`;
-      document.getElementById("sumBtcResult").textContent = `BTC Result: ${formatNumber(total)}`;
-      document.getElementById("sumAvgRoi").textContent = `Avg ROI: ${avgROI.toFixed(2)}%`;
-
-      renderPairSummary(trades);
-      attachDeleteHandlers();
-    }
-
-    function attachDeleteHandlers() {
-      document.querySelectorAll('button[data-idx]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const idx = Number(btn.dataset.idx);
-          const trades = migrateTradesIfNeeded(loadTrades());
-          if (!Number.isFinite(idx) || idx < 0 || idx >= trades.length) return;
-          if (!confirm("Delete this trade?")) return;
-          trades.splice(idx, 1);
-          saveTrades(trades);
-          renderTrades();
-        });
-      });
-    }
-
-    function renderPairSummary(trades) {
-      const table = document.querySelector("#pairsTable tbody");
-      table.innerHTML = "";
 
       const groups = {};
       trades.forEach(t => {
-        const p = t.pair || "—";
-        if (!groups[p]) groups[p] = { trades: 0, wins: 0, btc: 0, roi: 0 };
+        const p = t.pair || t.par || "";
+        if (!p) return;
+        if (!groups[p]) groups[p] = { trades: 0, wins: 0, btc: 0, roiSum: 0 };
         groups[p].trades++;
-        groups[p].btc += Number(t.btcResult || 0);
-        groups[p].roi += Number(t.roi || 0);
-        if (Number(t.btcResult || 0) > 0) groups[p].wins++;
+        groups[p].btc += Number(t.btcResult ?? t.btcResultado ?? 0);
+        groups[p].roiSum += Number(t.roi ?? t.roiPercent ?? 0);
+        if (Number(t.btcResult ?? t.btcResultado ?? 0) > 0) groups[p].wins++;
       });
 
-      const keys = Object.keys(groups);
-      keys.sort((a,b) => groups[b].btc - groups[a].btc);
+      const keys = Object.keys(groups).sort();
+      if (!keys.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="5" style="text-align:center;color:#6b7280;">No trades</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
 
-      keys.forEach(p => {
-        const g = groups[p];
-        const avg = g.trades ? (g.roi / g.trades) : 0;
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${p}</td>
+      keys.forEach(pair => {
+        const g = groups[pair];
+        const avgRoi = g.trades ? g.roiSum / g.trades : 0;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${pair}</td>
           <td>${g.trades}</td>
           <td>${g.wins}</td>
           <td class="${g.btc >= 0 ? "tag-win" : "tag-loss"}">${formatNumber(g.btc)}</td>
-          <td class="${avg >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(avg)}</td>
+          <td class="${avgRoi >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(avgRoi)}</td>
         `;
-        table.appendChild(row);
-      });
-
-      if (!keys.length) {
-        const row = document.createElement("tr");
-        row.innerHTML = `<td colspan="5" style="text-align:center; color:#6b7280;">No trades</td>`;
-        table.appendChild(row);
-      }
-    }
-
-    // ---------- UI auto-normalize on blur ----------
-    function attachAutoNormalize() {
-      const openEl = document.getElementById("openDate");
-      const closeEl = document.getElementById("closeDate");
-      const pairEl = document.getElementById("pair");
-
-      const fixDate = (el) => {
-        const nd = normalizeDate(el.value);
-        if (nd) el.value = nd;
-      };
-
-      openEl.addEventListener("blur", () => fixDate(openEl));
-      closeEl.addEventListener("blur", () => fixDate(closeEl));
-
-      pairEl.addEventListener("blur", () => {
-        const np = normalizePair(pairEl.value);
-        if (np) pairEl.value = np;
+        tbody.appendChild(tr);
       });
     }
 
-    // ---------- Form submit ----------
-    document.getElementById("tradeForm").addEventListener("submit", e => {
+    function render() {
+      const trades = loadTrades();
+
+      // Ensure compatibility with older structure:
+      // old: data/par/quantidadeAlt/precoEntrada/precoSaida/taxaBtc/btcEntrada/btcSaida/btcResultado/roiPercent
+      // new: openDate/closeDate/pair/qty/entry/exit/fee/btcIn/btcOut/btcResult/roi
+      // We'll display whichever exists.
+
+      const tbody = el("tradesTable").querySelector("tbody");
+      tbody.innerHTML = "";
+
+      let totalBtc = 0;
+      let wins = 0;
+
+      // newest first
+      const ordered = [...trades].reverse();
+
+      ordered.forEach((t, revIndex) => {
+        const originalIndex = trades.length - 1 - revIndex;
+
+        const open = t.openDate ?? t.open ?? t.data ?? "";
+        const close = t.closeDate ?? t.close ?? t.dataFechamento ?? "";
+        const pair = t.pair ?? t.par ?? "";
+        const qty = t.qty ?? t.quantidadeAlt ?? 0;
+
+        const entry = t.entry ?? t.precoEntrada ?? 0;
+        const exit  = t.exit  ?? t.precoSaida ?? 0;
+
+        const btcIn = t.btcIn ?? t.btcEntrada ?? (Number(qty) * Number(entry));
+        const btcOut = t.btcOut ?? t.btcSaida ?? (Number(qty) * Number(exit));
+
+        const btcResult = t.btcResult ?? t.btcResultado ?? (Number(btcOut) - Number(btcIn) - Number(t.fee ?? t.taxaBtc ?? 0));
+        const roi = t.roi ?? t.roiPercent ?? (Number(btcIn) ? (Number(btcResult) / Number(btcIn)) * 100 : 0);
+
+        totalBtc += Number(btcResult);
+        if (Number(btcResult) > 0) wins++;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${open || "—"}</td>
+          <td>${close || "—"}</td>
+          <td>${pair || "—"}</td>
+          <td>${formatNumber(qty, 4)}</td>
+          <td>${formatNumber(entry)}</td>
+          <td>${formatNumber(exit)}</td>
+          <td>${formatNumber(btcIn)}</td>
+          <td>${formatNumber(btcOut)}</td>
+          <td class="${btcResult >= 0 ? "tag-win" : "tag-loss"}">${formatNumber(btcResult)}</td>
+          <td class="${roi >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(roi)}</td>
+          <td>
+            <button class="trash" data-index="${originalIndex}" title="Delete">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const totalTrades = trades.length;
+      const winRate = totalTrades ? (wins / totalTrades) * 100 : 0;
+      const avgRoi = totalTrades
+        ? trades.reduce((acc, t) => acc + Number(t.roi ?? t.roiPercent ?? 0), 0) / totalTrades
+        : 0;
+
+      el("sumTrades").textContent = `Trades: ${totalTrades}`;
+      el("sumWinRate").textContent = `Win rate: ${winRate.toFixed(2)}%`;
+      el("sumBtc").textContent = `BTC Result: ${formatNumber(totalBtc)}`;
+      el("sumAvgRoi").textContent = `Avg ROI: ${avgRoi.toFixed(2)}%`;
+
+      // Wire trash buttons
+      tbody.querySelectorAll(".trash").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.index);
+          if (!Number.isInteger(idx)) return;
+          if (!confirm("Delete this trade?")) return;
+          const updated = loadTrades();
+          updated.splice(idx, 1);
+          saveTrades(updated);
+          render();
+        });
+      });
+
+      renderPairsSummary(trades);
+    }
+
+    // ---------- Events ----------
+    // Silent normalization on blur (minimal UX)
+    el("openDate").addEventListener("blur", () => {
+      const v = normalizeDate(el("openDate").value);
+      if (v) el("openDate").value = v;
+    });
+    el("closeDate").addEventListener("blur", () => {
+      const v = normalizeDate(el("closeDate").value);
+      if (v) el("closeDate").value = v;
+    });
+    el("pair").addEventListener("blur", () => {
+      const v = normalizePair(el("pair").value);
+      if (v) el("pair").value = v;
+    });
+
+    el("tradeForm").addEventListener("submit", (e) => {
       e.preventDefault();
 
-      const openRaw = document.getElementById("openDate").value;
-      const closeRaw = document.getElementById("closeDate").value;
-      const pairRaw = document.getElementById("pair").value;
+      const openDate = normalizeDate(el("openDate").value);
+      const closeDate = normalizeDate(el("closeDate").value);
+      const pair = normalizePair(el("pair").value);
 
-      const openDate = normalizeDate(openRaw);
-      const closeDate = normalizeDate(closeRaw);
-      const pair = normalizePair(pairRaw);
+      if (!openDate || !closeDate) {
+        alert("Please enter valid dates.");
+        return;
+      }
+      if (!pair) {
+        alert("Please enter a valid pair.");
+        return;
+      }
 
-      if (!openDate) return alert("Invalid open date.");
-      if (!closeDate) return alert("Invalid close date.");
-      if (!pair) return alert("Invalid pair.");
+      const qty = parseFloat(el("altQty").value);
+      const entry = parseFloat(el("entryPrice").value);
+      const exit = parseFloat(el("exitPrice").value);
+      const fee = parseFloat(el("feeBtc").value || "0");
 
-      const qty = parseFloat(document.getElementById("qty").value);
-      const entry = parseFloat(document.getElementById("entry").value);
-      const exit = parseFloat(document.getElementById("exit").value);
-      const fee = parseFloat(document.getElementById("fee").value || 0);
-
-      if (!Number.isFinite(qty) || !Number.isFinite(entry) || !Number.isFinite(exit)) {
-        alert("Fill quantity, entry and exit with valid numbers.");
+      if (![qty, entry, exit].every(v => isFinite(v) && v > 0)) {
+        alert("Please fill the required fields.");
         return;
       }
 
       const btcIn = qty * entry;
       const btcOut = qty * exit;
-      const btcResult = btcOut - btcIn - (Number.isFinite(fee) ? fee : 0);
+      const btcResult = btcOut - btcIn - (isFinite(fee) ? fee : 0);
       const roi = btcIn ? (btcResult / btcIn) * 100 : 0;
 
-      const trades = migrateTradesIfNeeded(loadTrades());
+      const trades = loadTrades();
+
+      // Keep existing trades intact; append new format
       trades.push({
         openDate,
         closeDate,
@@ -633,7 +614,7 @@
         qty,
         entry,
         exit,
-        fee: Number.isFinite(fee) ? fee : 0,
+        fee: isFinite(fee) ? fee : 0,
         btcIn,
         btcOut,
         btcResult,
@@ -641,130 +622,76 @@
       });
 
       saveTrades(trades);
-      renderTrades();
-      e.target.reset();
+
+      // reset form (keep placeholders)
+      el("tradeForm").reset();
+
+      // set defaults: open date today
+      const today = new Date();
+      const dd = pad2(today.getDate());
+      const mm = pad2(today.getMonth() + 1);
+      const yyyy = today.getFullYear();
+      el("openDate").value = `${dd}/${mm}/${yyyy}`;
+
+      render();
     });
 
-    // ---------- Export ----------
-    document.getElementById("btnExport").addEventListener("click", () => {
-      const trades = migrateTradesIfNeeded(loadTrades());
-      const payload = {
-        app: "Satoshis Tracker",
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        count: trades.length,
-        trades
-      };
+    el("btnPairs").addEventListener("click", () => {
+      const card = el("pairsCard");
+      card.style.display = (card.style.display === "none") ? "block" : "none";
+    });
 
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    el("btnExport").addEventListener("click", () => {
+      const data = loadTrades();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-
       const a = document.createElement("a");
-      const stamp = new Date().toISOString().slice(0,10);
       a.href = url;
-      a.download = `satoshis-tracker-backup-${stamp}.json`;
+      a.download = `satoshis-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-
       URL.revokeObjectURL(url);
     });
 
-    // ---------- Import ----------
-    const fileInput = document.getElementById("fileInput");
-    document.getElementById("btnImport").addEventListener("click", () => fileInput.click());
-
-    fileInput.addEventListener("change", async () => {
-      const file = fileInput.files && fileInput.files[0];
-      fileInput.value = "";
+    el("fileImport").addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
       if (!file) return;
 
       try {
         const text = await file.text();
-        const data = JSON.parse(text);
+        const imported = JSON.parse(text);
+        if (!Array.isArray(imported)) throw new Error("Invalid file.");
 
-        let imported = [];
-        if (Array.isArray(data)) imported = data;
-        else if (data && Array.isArray(data.trades)) imported = data.trades;
-        else throw new Error("Invalid file format.");
+        const mode = confirm("Merge with existing trades?\nOK = Merge\nCancel = Replace");
+        const current = loadTrades();
+        const next = mode ? current.concat(imported) : imported;
 
-        // Normalize imported
-        imported = imported.map(t => {
-          const openDate = normalizeDate(t.openDate || t.date || t.data);
-          const closeDate = normalizeDate(t.closeDate || t.date || t.data);
-          const pair = normalizePair(t.pair || t.par);
-          const qty = Number(t.qty ?? t.quantidadeAlt ?? 0);
-          const entry = Number(t.entry ?? t.precoEntrada ?? 0);
-          const exit = Number(t.exit ?? t.precoSaida ?? 0);
-          const fee = Number(t.fee ?? t.taxaBtc ?? 0);
-
-          const btcIn = Number.isFinite(t.btcIn) ? Number(t.btcIn) : qty * entry;
-          const btcOut = Number.isFinite(t.btcOut) ? Number(t.btcOut) : qty * exit;
-          const btcResult = Number.isFinite(t.btcResult) ? Number(t.btcResult) : (btcOut - btcIn - fee);
-          const roi = Number.isFinite(t.roi) ? Number(t.roi) : (btcIn ? (btcResult / btcIn) * 100 : 0);
-
-          return { openDate, closeDate, pair, qty, entry, exit, fee, btcIn, btcOut, btcResult, roi };
-        }).filter(t => t.openDate && t.closeDate && t.pair && Number.isFinite(t.qty) && Number.isFinite(t.entry) && Number.isFinite(t.exit));
-
-        const mode = prompt(
-          "Import mode:\n\nType 1 to MERGE (recommended)\nType 2 to REPLACE ALL\n\nYour choice:",
-          "1"
-        );
-
-        if (mode !== "1" && mode !== "2") {
-          alert("Import cancelled.");
-          return;
-        }
-
-        if (mode === "2") {
-          if (!confirm("Replace ALL local trades with imported file?")) return;
-          saveTrades(imported);
-          renderTrades();
-          alert(`Imported ${imported.length} trades (replaced).`);
-          return;
-        }
-
-        // MERGE
-        const existing = migrateTradesIfNeeded(loadTrades());
-        const existingIds = new Set(existing.map(tradeId));
-
-        let added = 0;
-        imported.forEach(t => {
-          const id = tradeId(t);
-          if (!existingIds.has(id)) {
-            existing.push(t);
-            existingIds.add(id);
-            added++;
-          }
-        });
-
-        saveTrades(existing);
-        renderTrades();
-        alert(`Imported ${imported.length} trades.\nAdded: ${added}\nSkipped duplicates: ${imported.length - added}`);
+        saveTrades(next);
+        render();
       } catch (err) {
-        console.error(err);
-        alert("Could not import file. Make sure it's a valid JSON backup.");
+        alert("Invalid JSON file.");
+      } finally {
+        e.target.value = "";
       }
     });
 
-    // ---------- Reset all ----------
-    document.getElementById("btnResetAll").addEventListener("click", () => {
-      const ok = confirm("This will DELETE ALL saved trades on this device/browser.\n\nContinue?");
-      if (!ok) return;
+    el("btnReset").addEventListener("click", () => {
+      if (!confirm("This will delete all saved trades on this device/browser.\nContinue?")) return;
       localStorage.removeItem(STORAGE_KEY);
-      renderTrades();
-      alert("All data reset.");
+      render();
     });
 
-    // ---------- Toggle pairs ----------
-    document.getElementById("btnTogglePairs").addEventListener("click", () => {
-      const c = document.getElementById("cardPairs");
-      c.style.display = c.style.display === "none" ? "block" : "none";
-    });
+    // Default open date = today
+    (function setDefaultDate(){
+      const today = new Date();
+      const dd = pad2(today.getDate());
+      const mm = pad2(today.getMonth() + 1);
+      const yyyy = today.getFullYear();
+      el("openDate").value = `${dd}/${mm}/${yyyy}`;
+    })();
 
-    // init
-    attachAutoNormalize();
-    renderTrades();
+    render();
   </script>
 </body>
 </html>
