@@ -53,7 +53,7 @@
 
     form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 12px;
     }
 
@@ -144,20 +144,13 @@
       color: #6b7280;
       text-align: center;
     }
-
-    #bankChart {
-      width: 100%;
-      background: #020617;
-      border-radius: 8px;
-    }
   </style>
 </head>
 <body>
 
   <!-- BIG ICON -->
   <div style="text-align:center; margin-bottom:10px;">
-    <img src="icon-512.png" alt="logo"
-         style="width:120px; height:120px; border-radius:20px;">
+    <img src="icon-512.png" alt="logo" style="width:120px; height:120px; border-radius:20px;">
   </div>
 
   <h1>Satoshis Tracker – BTC Pair Trades</h1>
@@ -169,33 +162,38 @@
 
     <form id="tradeForm">
       <div>
-        <label for="data">Date (DD/MM/YYYY)</label>
-        <input type="text" id="data" placeholder="03/12/2025" required>
+        <label for="openDate">Open date (DD/MM/YYYY)</label>
+        <input type="text" id="openDate" placeholder="03/12/2025" required>
       </div>
 
       <div>
-        <label for="par">Pair</label>
-        <input type="text" id="par" placeholder="XRP/BTC" required>
+        <label for="closeDate">Close date (DD/MM/YYYY)</label>
+        <input type="text" id="closeDate" placeholder="05/12/2025" required>
       </div>
 
       <div>
-        <label for="quantidadeAlt">Alt quantity</label>
-        <input type="number" step="0.00000001" id="quantidadeAlt" required>
+        <label for="pair">Pair (auto → XXX/BTC)</label>
+        <input type="text" id="pair" placeholder="xrpbtc / xrp / XRP/BTC" required>
       </div>
 
       <div>
-        <label for="precoEntrada">Entry price (BTC)</label>
-        <input type="number" step="0.00000001" id="precoEntrada" required>
+        <label for="qty">Alt quantity</label>
+        <input type="number" step="0.00000001" id="qty" required>
       </div>
 
       <div>
-        <label for="precoSaida">Exit price (BTC)</label>
-        <input type="number" step="0.00000001" id="precoSaida" required>
+        <label for="entry">Entry price (BTC)</label>
+        <input type="number" step="0.00000001" id="entry" required>
       </div>
 
       <div>
-        <label for="taxaBtc">Fee (BTC)</label>
-        <input type="number" step="0.00000001" id="taxaBtc" placeholder="0 if paid in BNB">
+        <label for="exit">Exit price (BTC)</label>
+        <input type="number" step="0.00000001" id="exit" required>
+      </div>
+
+      <div>
+        <label for="fee">Fee (BTC) [optional]</label>
+        <input type="number" step="0.00000001" id="fee" placeholder="0 if paid in BNB">
       </div>
 
       <div>
@@ -208,34 +206,16 @@
   <div class="card">
     <h2>Summary</h2>
 
-    <div style="margin-bottom:12px;">
-      <label for="bancaInicial">Initial bank (BTC):</label>
-      <input type="number" step="0.00000001" id="bancaInicial"
-             placeholder="0.0025" style="max-width:160px;">
-      <button class="btn-primary" id="btnSalvarBanca"
-              style="width:auto; margin-left:8px;">Save</button>
-    </div>
-
     <div class="summary">
       <div class="summary-item" id="sumTotalTrades">Trades: 0</div>
       <div class="summary-item" id="sumWins">Win rate: 0%</div>
       <div class="summary-item" id="sumBtcResult">BTC Result: 0</div>
       <div class="summary-item" id="sumAvgRoi">Avg ROI: 0%</div>
-      <div class="summary-item" id="sumBankInitial">Initial bank: —</div>
-      <div class="summary-item" id="sumBankCurrent">Current bank: —</div>
-      <div class="summary-item" id="sumBankGrowth">Growth: —</div>
     </div>
 
     <div style="margin-top:12px;">
-      <button class="btn-secondary" id="btnToggleChart">Bank chart</button>
       <button class="btn-secondary" id="btnTogglePairs">Pairs summary</button>
     </div>
-  </div>
-
-  <!-- BANK CHART -->
-  <div class="card" id="cardChart" style="display:none;">
-    <h2>Bank evolution (BTC)</h2>
-    <canvas id="bankChart" height="200"></canvas>
   </div>
 
   <!-- PAIRS SUMMARY -->
@@ -264,7 +244,8 @@
       <table id="tradesTable">
         <thead>
           <tr>
-            <th>Date</th>
+            <th>Open</th>
+            <th>Close</th>
             <th>Pair</th>
             <th>Qty</th>
             <th>Entry (BTC)</th>
@@ -286,9 +267,117 @@
 
   <script>
     const STORAGE_KEY = "btcPairTrades";
-    const BANK_KEY = "btcBankInitial";
-    const HISTORY_KEY = "btcBankHistory";
 
+    // ---------- Helpers: format ----------
+    function formatNumber(n, d = 8) { return Number(n).toFixed(d); }
+    function formatPercent(n) { return Number(n).toFixed(2) + "%"; }
+
+    // ---------- Normalize: DATE ----------
+    // Accepts: 03122025, 3/12/2025, 03-12-25, 03.12.2025, 2025-12-03
+    function normalizeDate(input) {
+      const s = String(input || "").trim();
+      if (!s) return null;
+
+      // If looks like YYYY-MM-DD or YYYY/MM/DD
+      const isoLike = s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+      if (isoLike) {
+        const y = parseInt(isoLike[1], 10);
+        const m = parseInt(isoLike[2], 10);
+        const d = parseInt(isoLike[3], 10);
+        if (!isValidYMD(y, m, d)) return null;
+        return toDDMMYYYY(d, m, y);
+      }
+
+      // Extract digits only
+      const digits = s.replace(/\D/g, "");
+      if (digits.length === 8) {
+        // Decide between DDMMYYYY and YYYYMMDD
+        const first4 = parseInt(digits.slice(0,4), 10);
+        if (first4 >= 1900 && first4 <= 2099) {
+          const y = first4;
+          const m = parseInt(digits.slice(4,6), 10);
+          const d = parseInt(digits.slice(6,8), 10);
+          if (!isValidYMD(y, m, d)) return null;
+          return toDDMMYYYY(d, m, y);
+        } else {
+          const d = parseInt(digits.slice(0,2), 10);
+          const m = parseInt(digits.slice(2,4), 10);
+          const y = parseInt(digits.slice(4,8), 10);
+          if (!isValidYMD(y, m, d)) return null;
+          return toDDMMYYYY(d, m, y);
+        }
+      }
+
+      if (digits.length === 6) {
+        // DDMMYY -> 20YY
+        const d = parseInt(digits.slice(0,2), 10);
+        const m = parseInt(digits.slice(2,4), 10);
+        const y = 2000 + parseInt(digits.slice(4,6), 10);
+        if (!isValidYMD(y, m, d)) return null;
+        return toDDMMYYYY(d, m, y);
+      }
+
+      // If typed with separators like D/M/YYYY
+      const dmY = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2}|\d{4})$/);
+      if (dmY) {
+        const d = parseInt(dmY[1], 10);
+        const m = parseInt(dmY[2], 10);
+        let y = parseInt(dmY[3], 10);
+        if (String(dmY[3]).length === 2) y = 2000 + y;
+        if (!isValidYMD(y, m, d)) return null;
+        return toDDMMYYYY(d, m, y);
+      }
+
+      return null;
+    }
+
+    function toDDMMYYYY(d, m, y) {
+      const dd = String(d).padStart(2, "0");
+      const mm = String(m).padStart(2, "0");
+      const yyyy = String(y).padStart(4, "0");
+      return `${dd}/${mm}/${yyyy}`;
+    }
+
+    function isValidYMD(y, m, d) {
+      if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return false;
+      if (y < 1900 || y > 2099) return false;
+      if (m < 1 || m > 12) return false;
+      if (d < 1 || d > 31) return false;
+      // basic month-day check
+      const daysInMonth = new Date(y, m, 0).getDate();
+      return d <= daysInMonth;
+    }
+
+    // ---------- Normalize: PAIR ----------
+    // Accepts: xrpbtc, xrp/btc, xrp, XRPbtc,  XRP / BTC  -> XRP/BTC
+    function normalizePair(input) {
+      let s = String(input || "").trim().toUpperCase();
+      if (!s) return null;
+
+      s = s.replace(/\s+/g, "");
+      s = s.replace(/-/g, "/");
+
+      if (s.includes("/")) {
+        const [base, quote] = s.split("/");
+        if (!base) return null;
+        // force quote BTC
+        return `${base}/BTC`;
+      }
+
+      // no slash
+      if (s === "BTC") return null;
+
+      if (s.endsWith("BTC") && s.length > 3) {
+        const base = s.slice(0, -3);
+        if (!base) return null;
+        return `${base}/BTC`;
+      }
+
+      // just base
+      return `${s}/BTC`;
+    }
+
+    // ---------- Storage ----------
     function loadTrades() {
       try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
       catch { return []; }
@@ -298,109 +387,111 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(t));
     }
 
-    function loadBankInitial() {
-      let v = parseFloat(localStorage.getItem(BANK_KEY));
-      return isNaN(v) ? 0 : v;
+    // ---------- Migration (preserve old trades) ----------
+    function migrateTradesIfNeeded(trades) {
+      // Old structure: { date, pair, qty, entry, exit, btcIn, btcOut, btcResult, roi }
+      // New: { openDate, closeDate, pair, ... }
+      let changed = false;
+
+      const migrated = trades.map(t => {
+        const copy = { ...t };
+
+        // open/close
+        if (!copy.openDate || !copy.closeDate) {
+          const legacyDate = copy.date || copy.data; // be generous
+          if (legacyDate && (!copy.openDate || !copy.closeDate)) {
+            copy.openDate = copy.openDate || legacyDate;
+            copy.closeDate = copy.closeDate || legacyDate;
+            changed = true;
+          }
+        }
+
+        // pair normalization (safe)
+        if (copy.pair && typeof copy.pair === "string") {
+          const np = normalizePair(copy.pair);
+          if (np && np !== copy.pair) {
+            copy.pair = np;
+            changed = true;
+          }
+        }
+
+        // date normalization (safe)
+        if (copy.openDate) {
+          const nd = normalizeDate(copy.openDate) || copy.openDate;
+          if (nd !== copy.openDate) { copy.openDate = nd; changed = true; }
+        }
+        if (copy.closeDate) {
+          const nd = normalizeDate(copy.closeDate) || copy.closeDate;
+          if (nd !== copy.closeDate) { copy.closeDate = nd; changed = true; }
+        }
+
+        return copy;
+      });
+
+      if (changed) saveTrades(migrated);
+      return migrated;
     }
 
-    function saveBankInitial(v) {
-      localStorage.setItem(BANK_KEY, String(v));
-    }
-
-    function loadBankHistory() {
-      try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
-      catch { return []; }
-    }
-
-    function saveBankHistory(h) {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
-    }
-
-    function updateBankHistory(val) {
-      const h = loadBankHistory();
-      if (!h.length || h[h.length - 1].value !== val) {
-        h.push({ time: new Date().toISOString(), value: val });
-        saveBankHistory(h);
-      }
-    }
-
-    function formatNumber(n, d = 8) { return Number(n).toFixed(d); }
-    function formatPercent(n) { return Number(n).toFixed(2) + "%"; }
-
-    function parseDate(str) {
-      // DD/MM/YYYY → YYYY-MM-DD
-      const [d, m, y] = str.split("/");
-      return `${y}-${m}-${d}`;
-    }
-
-    // 🔵 MAIN RENDER FUNCTION
+    // ---------- Render ----------
     function renderTrades() {
-      const trades = loadTrades();
-      let total = 0, wins = 0;
+      let trades = loadTrades();
+      trades = migrateTradesIfNeeded(trades);
 
+      let total = 0, wins = 0;
       const tbody = document.querySelector("#tradesTable tbody");
       tbody.innerHTML = "";
 
-      trades.forEach((t, idx) => {
-        total += t.btcResult;
-        if (t.btcResult > 0) wins++;
+      trades.forEach((t) => {
+        total += Number(t.btcResult || 0);
+        if (Number(t.btcResult || 0) > 0) wins++;
 
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td>${t.date}</td>
-          <td>${t.pair}</td>
-          <td>${formatNumber(t.qty, 4)}</td>
-          <td>${formatNumber(t.entry)}</td>
-          <td>${formatNumber(t.exit)}</td>
-          <td>${formatNumber(t.btcIn)}</td>
-          <td>${formatNumber(t.btcOut)}</td>
-          <td class="${t.btcResult >= 0 ? "tag-win" : "tag-loss"}">${formatNumber(t.btcResult)}</td>
-          <td class="${t.roi >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(t.roi)}</td>
+          <td>${t.openDate || "—"}</td>
+          <td>${t.closeDate || "—"}</td>
+          <td>${t.pair || "—"}</td>
+          <td>${formatNumber(t.qty || 0, 4)}</td>
+          <td>${formatNumber(t.entry || 0)}</td>
+          <td>${formatNumber(t.exit || 0)}</td>
+          <td>${formatNumber(t.btcIn || 0)}</td>
+          <td>${formatNumber(t.btcOut || 0)}</td>
+          <td class="${Number(t.btcResult || 0) >= 0 ? "tag-win" : "tag-loss"}">${formatNumber(t.btcResult || 0)}</td>
+          <td class="${Number(t.roi || 0) >= 0 ? "tag-win" : "tag-loss"}">${formatPercent(t.roi || 0)}</td>
         `;
         tbody.appendChild(row);
       });
 
       const totalTrades = trades.length;
-      const avgROI = totalTrades ? trades.reduce((s, t) => s + t.roi, 0) / totalTrades : 0;
+      const avgROI = totalTrades ? trades.reduce((s, t) => s + Number(t.roi || 0), 0) / totalTrades : 0;
 
       document.getElementById("sumTotalTrades").textContent = `Trades: ${totalTrades}`;
       document.getElementById("sumWins").textContent = `Win rate: ${(wins / totalTrades * 100 || 0).toFixed(2)}%`;
       document.getElementById("sumBtcResult").textContent = `BTC Result: ${formatNumber(total)}`;
       document.getElementById("sumAvgRoi").textContent = `Avg ROI: ${avgROI.toFixed(2)}%`;
 
-      // BANK
-      const bankInit = loadBankInitial();
-      const bankNow = bankInit + total;
-
-      document.getElementById("sumBankInitial").textContent = `Initial bank: ${formatNumber(bankInit)}`;
-      document.getElementById("sumBankCurrent").textContent = `Current bank: ${formatNumber(bankNow)}`;
-      document.getElementById("sumBankGrowth").textContent =
-        `Growth: ${(bankInit ? (total / bankInit * 100) : 0).toFixed(2)}%`;
-
-      updateBankHistory(bankNow);
-      renderBankChart();
-      renderPairSummary();
+      renderPairSummary(trades);
     }
 
-    // 🔵 PAIRS SUMMARY
-    function renderPairSummary() {
-      const trades = loadTrades();
+    function renderPairSummary(trades) {
       const table = document.querySelector("#pairsTable tbody");
       table.innerHTML = "";
 
       const groups = {};
-
       trades.forEach(t => {
-        if (!groups[t.pair]) groups[t.pair] = { trades: 0, wins: 0, btc: 0, roi: 0 };
-        groups[t.pair].trades++;
-        groups[t.pair].btc += t.btcResult;
-        groups[t.pair].roi += t.roi;
-        if (t.btcResult > 0) groups[t.pair].wins++;
+        const p = t.pair || "—";
+        if (!groups[p]) groups[p] = { trades: 0, wins: 0, btc: 0, roi: 0 };
+        groups[p].trades++;
+        groups[p].btc += Number(t.btcResult || 0);
+        groups[p].roi += Number(t.roi || 0);
+        if (Number(t.btcResult || 0) > 0) groups[p].wins++;
       });
 
-      Object.keys(groups).forEach(p => {
+      const keys = Object.keys(groups);
+      keys.sort((a,b) => groups[b].btc - groups[a].btc);
+
+      keys.forEach(p => {
         const g = groups[p];
-        const avg = g.roi / g.trades;
+        const avg = g.trades ? (g.roi / g.trades) : 0;
         const row = document.createElement("tr");
         row.innerHTML = `
           <td>${p}</td>
@@ -412,69 +503,83 @@
         table.appendChild(row);
       });
 
-      if (!Object.keys(groups).length) {
+      if (!keys.length) {
         const row = document.createElement("tr");
         row.innerHTML = `<td colspan="5" style="text-align:center; color:#6b7280;">No trades</td>`;
         table.appendChild(row);
       }
     }
 
-    // 🔵 BANK CHART
-    function renderBankChart() {
-      const c = document.getElementById("bankChart");
-      const ctx = c.getContext("2d");
-      const history = loadBankHistory();
+    // ---------- UI auto-normalize on blur ----------
+    function attachAutoNormalize() {
+      const openEl = document.getElementById("openDate");
+      const closeEl = document.getElementById("closeDate");
+      const pairEl = document.getElementById("pair");
 
-      ctx.clearRect(0, 0, c.width, c.height);
+      const fixDate = (el) => {
+        const nd = normalizeDate(el.value);
+        if (nd) el.value = nd;
+      };
 
-      if (!history.length) return;
+      openEl.addEventListener("blur", () => fixDate(openEl));
+      closeEl.addEventListener("blur", () => fixDate(closeEl));
 
-      const values = history.map(h => h.value);
-      const min = Math.min(...values);
-      const max = Math.max(...values);
-      const range = max - min || 1;
-
-      ctx.strokeStyle = "#22c55e";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-
-      values.forEach((v, i) => {
-        const x = (i / (values.length - 1)) * c.width;
-        const y = c.height - ((v - min) / range) * c.height;
-        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      pairEl.addEventListener("blur", () => {
+        const np = normalizePair(pairEl.value);
+        if (np) pairEl.value = np;
       });
-
-      ctx.stroke();
     }
 
-    // 🔵 FORM SUBMIT
+    // ---------- Form submit ----------
     document.getElementById("tradeForm").addEventListener("submit", e => {
       e.preventDefault();
 
-      const dateStr = document.getElementById("data").value.trim();
-      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
-        alert("Date must be in DD/MM/YYYY format.");
+      // Normalize inputs (accept messy input)
+      const openRaw = document.getElementById("openDate").value;
+      const closeRaw = document.getElementById("closeDate").value;
+      const pairRaw = document.getElementById("pair").value;
+
+      const openDate = normalizeDate(openRaw);
+      const closeDate = normalizeDate(closeRaw);
+      const pair = normalizePair(pairRaw);
+
+      if (!openDate) {
+        alert("Invalid open date. Use something like 03/12/2025 (or 03122025).");
+        return;
+      }
+      if (!closeDate) {
+        alert("Invalid close date. Use something like 05/12/2025 (or 05122025).");
+        return;
+      }
+      if (!pair) {
+        alert("Invalid pair. Examples: XRP/BTC, xrpbtc, xrp");
         return;
       }
 
-      const pair = document.getElementById("par").value.trim();
-      const qty = parseFloat(document.getElementById("quantidadeAlt").value);
-      const entry = parseFloat(document.getElementById("precoEntrada").value);
-      const exit = parseFloat(document.getElementById("precoSaida").value);
-      const fee = parseFloat(document.getElementById("taxaBtc").value || 0);
+      const qty = parseFloat(document.getElementById("qty").value);
+      const entry = parseFloat(document.getElementById("entry").value);
+      const exit = parseFloat(document.getElementById("exit").value);
+      const fee = parseFloat(document.getElementById("fee").value || 0);
+
+      if (!Number.isFinite(qty) || !Number.isFinite(entry) || !Number.isFinite(exit)) {
+        alert("Fill quantity, entry and exit with valid numbers.");
+        return;
+      }
 
       const btcIn = qty * entry;
       const btcOut = qty * exit;
-      const btcResult = btcOut - btcIn - fee;
+      const btcResult = btcOut - btcIn - (Number.isFinite(fee) ? fee : 0);
       const roi = btcIn ? (btcResult / btcIn) * 100 : 0;
 
-      const trades = loadTrades();
+      const trades = migrateTradesIfNeeded(loadTrades());
       trades.push({
-        date: dateStr,
+        openDate,
+        closeDate,
         pair,
         qty,
         entry,
         exit,
+        fee: Number.isFinite(fee) ? fee : 0,
         btcIn,
         btcOut,
         btcResult,
@@ -486,24 +591,14 @@
       e.target.reset();
     });
 
-    document.getElementById("btnSalvarBanca").addEventListener("click", () => {
-      const v = parseFloat(document.getElementById("bancaInicial").value);
-      if (!v || v <= 0) return alert("Enter valid bank value");
-      saveBankInitial(v);
-      renderTrades();
-    });
-
-    document.getElementById("btnToggleChart").addEventListener("click", () => {
-      const c = document.getElementById("cardChart");
-      c.style.display = c.style.display === "none" ? "block" : "none";
-      renderBankChart();
-    });
-
+    // ---------- Toggle pairs ----------
     document.getElementById("btnTogglePairs").addEventListener("click", () => {
       const c = document.getElementById("cardPairs");
       c.style.display = c.style.display === "none" ? "block" : "none";
     });
 
+    // init
+    attachAutoNormalize();
     renderTrades();
   </script>
 </body>
